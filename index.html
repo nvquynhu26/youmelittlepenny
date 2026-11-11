@@ -1,37 +1,1875 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Youmelittlepenny</title>
-  <!-- Tailwind CSS CDN -->
+  
+  <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- React & ReactDOM -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Babel for JSX -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyberDark: '#07090e',
+            cyberCard: '#0f141f',
+            cyberBorder: '#1e293b',
+            neonGreen: '#00ff66',
+            neonCyan: '#00f0ff',
+            neonPink: '#ff007f',
+            neonYellow: '#ffe600'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- React, ReactDOM, Babel for Single File In-Browser Execution -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
   <style>
-    body { background-color: #050508; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    .neon-cyan { color: #00f2fe; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4); }
-    .neon-pink { color: #ff007f; text-shadow: 0 0 10px rgba(255, 0, 127, 0.4); }
-    .neon-lime { color: #39ff14; text-shadow: 0 0 10px rgba(57, 255, 20, 0.4); }
-    .neon-amber { color: #ffb703; text-shadow: 0 0 10px rgba(255, 183, 3, 0.4); }
-    .border-neon { border-color: rgba(0, 242, 254, 0.2); }
-    .border-neon-pink { border-color: rgba(255, 0, 127, 0.2); }
-    input, select, textarea { background-color: #0e0e17; border: 1px solid #1e1e2f; color: #f8fafc; }
-    input:focus, select:focus, textarea:focus { border-color: #00f2fe; outline: none; box-shadow: 0 0 8px rgba(0,242,254,0.3); }
-    /* Scrollbar */
+    body {
+      background-color: #07090e;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .neon-text-green { text-shadow: 0 0 10px rgba(0, 255, 102, 0.5); }
+    .neon-text-cyan { text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
+    .neon-border-cyan { box-shadow: 0 0 8px rgba(0, 240, 255, 0.3); }
+    input, select, textarea {
+      background-color: #07090e !important;
+      border-color: #1e293b !important;
+      color: #f8fafc !important;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #00f0ff !important;
+      outline: none;
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+    }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #050508; }
-    ::-webkit-scrollbar-thumb { background: #1e1e2f; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #00f2fe; }
+    ::-webkit-scrollbar-track { background: #07090e; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
   </style>
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel" src="app.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // ==========================================
+    // ⚙️ CONFIGURATION: PASTE YOUR GAS URL HERE
+    // ==========================================
+    const GOOGLE_APPS_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyi8Zg8U08BmtjL9-C0UCW_g6v6adg4MwCYv8A-SFrgNsEIHSPoXaMf69cVqlv38zjzsw/exec";
+
+    // --- I18N DICTIONARY (STRICTLY EN & KO ONLY) ---
+    const i18n = {
+      en: {
+        lockTitle: "Youmelittlepenny",
+        lockDesc: "Encrypted Multi-Currency Financial Terminal",
+        passPlaceholder: "Enter Passcode",
+        unlockBtn: "Authenticate",
+        wrongPass: "Access Denied",
+        netWorth: "Net Worth",
+        assets: "Assets",
+        liabilities: "Liabilities",
+        rates: "Live Exchange Rates",
+        sync: "Sync Drive",
+        synced: "Synced",
+        syncing: "Syncing...",
+        syncFail: "Sync Failed",
+        tabs: {
+          dash: "Overview",
+          korea: "Korea",
+          vietnam: "Vietnam",
+          invest: "Funds",
+          assets: "Property",
+          cashflow: "Cashflow",
+          debt: "Debts",
+          history: "Ledger",
+          analytics: "Analysis"
+        },
+        actions: {
+          add: "Add",
+          save: "Save",
+          edit: "Edit",
+          delete: "Delete",
+          cancel: "Cancel",
+          withdraw: "Partial Withdraw",
+          terminate: "Liquidate",
+          export: "Export JSON",
+          import: "Import JSON"
+        },
+        common: {
+          bank: "Bank",
+          account: "Account",
+          balance: "Balance",
+          principal: "Principal",
+          rate: "Rate",
+          term: "Term",
+          tax: "Tax",
+          date: "Date",
+          desc: "Note",
+          fee: "Fee",
+          category: "Category",
+          type: "Type",
+          amount: "Amount",
+          currency: "Currency",
+          fromParking: "Deduct from Parking",
+          accrued: "Accrued Value",
+          maturityVal: "At Maturity",
+          earlyRate: "Early Rate",
+          history: "History Log",
+          source: "Source"
+        }
+      },
+      ko: {
+        lockTitle: "Youmelittlepenny",
+        lockDesc: "다중 통화 통합 자산 터미널",
+        passPlaceholder: "비밀번호 입력",
+        unlockBtn: "인증",
+        wrongPass: "접근 거부",
+        netWorth: "순자산",
+        assets: "총자산",
+        liabilities: "부채",
+        rates: "실시간 환율",
+        sync: "드라이브 동기화",
+        synced: "동기화 완료",
+        syncing: "동기화 중...",
+        syncFail: "동기화 실패",
+        tabs: {
+          dash: "대시보드",
+          korea: "한국 금융",
+          vietnam: "베트남 금융",
+          invest: "펀드 투자",
+          assets: "실물 자산",
+          cashflow: "수지 가계부",
+          debt: "부채 관리",
+          history: "전체 내역",
+          analytics: "종합 분석"
+        },
+        actions: {
+          add: "추가",
+          save: "저장",
+          edit: "수정",
+          delete: "삭제",
+          cancel: "취소",
+          withdraw: "중도인출",
+          terminate: "중도해지",
+          export: "JSON 내보내기",
+          import: "JSON 가져오기"
+        },
+        common: {
+          bank: "은행",
+          account: "계좌명",
+          balance: "잔액",
+          principal: "원금",
+          rate: "금리",
+          term: "기간",
+          tax: "세율",
+          date: "날짜",
+          desc: "비고",
+          fee: "수수료",
+          category: "분류",
+          type: "구분",
+          amount: "금액",
+          currency: "통화",
+          fromParking: "파킹통장 출금",
+          accrued: "현재 평가액",
+          maturityVal: "만기 예상액",
+          earlyRate: "중도해지 금리",
+          history: "계좌 내역",
+          source: "출처"
+        }
+      }
+    };
+
+    // Bank presets for Korean and Vietnamese markets
+    const KOREA_BANKS = ["Toss Bank", "KakaoBank", "Kookmin KB", "Shinhan", "Hana", "Woori", "K-Bank"];
+    const VN_BANKS = ["MBBank", "Techcombank", "Vietcombank", "VPBank", "ACB", "TPBank"];
+
+    function App() {
+      // --- STATE MANAGERS ---
+      const [authed, setAuthed] = useState(() => sessionStorage.getItem("auth_pass") === "$1Million");
+      const [passInput, setPassInput] = useState("");
+      const [lang, setLang] = useState("en");
+      const [activeTab, setActiveTab] = useState("dash");
+      const [syncStatus, setSyncStatus] = useState("idle");
+
+      // Exchange Rates (Base: USD, editable / live query)
+      const [fx, setFx] = useState(() => {
+        const saved = localStorage.getItem("pen_fx");
+        return saved ? JSON.parse(saved) : { USD_KRW: 1380, USD_VND: 25400, KRW_VND: 18.4 };
+      });
+
+      // --- ACCOUNTS & ASSETS STATE (Init with user's baseline figures, fully editable) ---
+      const [krParking, setKrParking] = useState(() => {
+        const saved = localStorage.getItem("pen_kr_parking");
+        return saved ? JSON.parse(saved) : [
+          { id: "kp1", bank: "Toss Bank", name: "Main Parking", balance: 500000, rate: 2.0, subPots: [
+            { id: "sp1", name: "Toss Surplus", balance: 75000 }
+          ]}
+        ];
+      });
+
+      const [krSavings, setKrSavings] = useState(() => {
+        const saved = localStorage.getItem("pen_kr_savings");
+        return saved ? JSON.parse(saved) : [
+          { id: "ks1", bank: "Hana", name: "Fixed Jeonse Buffer", type: "yegeum", principal: 9000000, currentPrincipal: 9000000, rate: 3.0, taxRate: 15.4, startDate: "2026-05-09", maturityDate: "2027-05-09", earlyWithdrawals: [], terminated: false, actualMaturity: null },
+          { id: "ks2", bank: "Toss Bank", name: "Study Fund", type: "jeokgeum", principal: 865000, currentPrincipal: 865000, rate: 1.4, taxRate: 15.4, startDate: "2026-01-01", maturityDate: "2027-05-09", earlyWithdrawals: [], terminated: false, actualMaturity: null }
+        ];
+      });
+
+      const [vnParking, setVnParking] = useState(() => {
+        const saved = localStorage.getItem("pen_vn_parking");
+        return saved ? JSON.parse(saved) : [
+          { id: "vp1", bank: "MBBank", name: "Spending Checking", balance: 3000000, rate: 0.2 }
+        ];
+      });
+
+      const [vnSavings, setVnSavings] = useState(() => {
+        const saved = localStorage.getItem("pen_vn_savings");
+        return saved ? JSON.parse(saved) : [
+          { id: "vs1", bank: "MBBank", name: "Annual Target May 9", type: "fixed", principal: 7000000, rate: 4.3, startDate: "2026-05-09", maturityDate: "2027-05-09", earlyRate: 0.2, terminated: false, actualMaturity: null },
+          { id: "vs2", bank: "MBBank", name: "Tenant Deposit Ringfence", type: "fixed", principal: 14000000, rate: 6.2, startDate: "2026-05-09", maturityDate: "2027-05-09", earlyRate: 0.2, terminated: false, actualMaturity: null }
+        ];
+      });
+
+      const [funds, setFunds] = useState(() => {
+        const saved = localStorage.getItem("pen_funds");
+        return saved ? JSON.parse(saved) : [
+          { id: "f1", code: "MBBOND", units: 45.45, buyNav: 22000, currentNav: 22385, history: [22000, 22100, 22250, 22385] },
+          { id: "f2", code: "MBAM", units: 33.33, buyNav: 15000, currentNav: 15150, history: [15000, 15050, 15100, 15150] }
+        ];
+      });
+
+      const [properties, setProperties] = useState(() => {
+        const saved = localStorage.getItem("pen_properties");
+        return saved ? JSON.parse(saved) : [
+          { id: "p1", name: "HCMC Mid Apartment (95% Paid)", type: "Real Estate", address: "Ho Chi Minh City", buyDate: "2024-01-10", buyPrice: 2000000000, currency: "VND", valuation: 2000000000, valDate: "2026-11-01", soldDate: null, fundedAccount: "None" },
+          { id: "p2", name: "Housing Key Money Deposit (Korea)", type: "Deposit", address: "Seoul, Korea", buyDate: "2024-05-01", buyPrice: 8000000, currency: "KRW", valuation: 8000000, valDate: "2026-11-01", soldDate: null, fundedAccount: "None" }
+        ];
+      });
+
+      const [debts, setDebts] = useState(() => {
+        const saved = localStorage.getItem("pen_debts");
+        return saved ? JSON.parse(saved) : [
+          { id: "d1", name: "Tenant Security Deposit (Refundable)", amount: 14000000, currency: "VND", party: "Tenant Room A", dueDate: "2027-05-09", note: "Held in MBBank term deposit" }
+        ];
+      });
+
+      const [cashflow, setCashflow] = useState(() => {
+        const saved = localStorage.getItem("pen_cashflow");
+        return saved ? JSON.parse(saved) : [
+          { id: "c1", date: "2026-11-01", type: "Income", category: "Salary", amount: 2414477, currency: "KRW", accountName: "Toss Bank", desc: "Design Studio Seoul", fee: 0 },
+          { id: "c2", date: "2026-11-01", type: "Income", category: "Rental", amount: 7300000, currency: "VND", accountName: "MBBank", desc: "Apartment Rent", fee: 0 },
+          { id: "c3", date: "2026-11-05", type: "Expense", category: "Tuition", amount: 3300000, currency: "VND", accountName: "MBBank", desc: "Spanish Class", fee: 0 },
+          { id: "c4", date: "2026-11-05", type: "Expense", category: "Living", amount: 1164000, currency: "KRW", accountName: "Toss Bank", desc: "Seoul Rent & Food", fee: 0 }
+        ];
+      });
+
+      const [logs, setLogs] = useState(() => {
+        const saved = localStorage.getItem("pen_logs");
+        return saved ? JSON.parse(saved) : [
+          { id: "l1", date: "2026-11-10", account: "MBBOND", event: "Initial buy 1M VND", amount: 1000000, currency: "VND", note: "DCA seed" }
+        ];
+      });
+
+      // --- PERSISTENCE ---
+      useEffect(() => { localStorage.setItem("pen_fx", JSON.stringify(fx)); }, [fx]);
+      useEffect(() => { localStorage.setItem("pen_kr_parking", JSON.stringify(krParking)); }, [krParking]);
+      useEffect(() => { localStorage.setItem("pen_kr_savings", JSON.stringify(krSavings)); }, [krSavings]);
+      useEffect(() => { localStorage.setItem("pen_vn_parking", JSON.stringify(vnParking)); }, [vnParking]);
+      useEffect(() => { localStorage.setItem("pen_vn_savings", JSON.stringify(vnSavings)); }, [vnSavings]);
+      useEffect(() => { localStorage.setItem("pen_funds", JSON.stringify(funds)); }, [funds]);
+      useEffect(() => { localStorage.setItem("pen_properties", JSON.stringify(properties)); }, [properties]);
+      useEffect(() => { localStorage.setItem("pen_debts", JSON.stringify(debts)); }, [debts]);
+      useEffect(() => { localStorage.setItem("pen_cashflow", JSON.stringify(cashflow)); }, [cashflow]);
+      useEffect(() => { localStorage.setItem("pen_logs", JSON.stringify(logs)); }, [logs]);
+
+      // --- CONVERSION ENGINE ---
+      const toVND = (amount, cur) => {
+        if (!amount) return 0;
+        if (cur === "VND") return amount;
+        if (cur === "KRW") return amount * fx.KRW_VND;
+        if (cur === "USD") return amount * fx.USD_VND;
+        return amount;
+      };
+
+      const toKRW = (amount, cur) => {
+        if (!amount) return 0;
+        if (cur === "KRW") return amount;
+        if (cur === "VND") return amount / fx.KRW_VND;
+        if (cur === "USD") return amount * fx.USD_KRW;
+        return amount;
+      };
+
+      const toUSD = (amount, cur) => {
+        if (!amount) return 0;
+        if (cur === "USD") return amount;
+        if (cur === "VND") return amount / fx.USD_VND;
+        if (cur === "KRW") return amount / fx.USD_KRW;
+        return amount;
+      };
+
+      const fmt = (val, cur) => {
+        if (val === undefined || val === null || isNaN(val)) return "0";
+        if (cur === "VND") return Math.round(val).toLocaleString() + " ₫";
+        if (cur === "KRW") return Math.round(val).toLocaleString() + " ₩";
+        if (cur === "USD") return "$" + Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return Number(val).toLocaleString();
+      };
+
+      // --- TOTALS COMPUTATION ---
+      const totals = useMemo(() => {
+        let krCash = krParking.reduce((sum, p) => sum + p.balance + (p.subPots || []).reduce((spSum, sp) => spSum + sp.balance, 0), 0);
+        let krDeposit = krSavings.filter(s => !s.terminated).reduce((sum, s) => sum + s.currentPrincipal, 0);
+        let vnCash = vnParking.reduce((sum, p) => sum + p.balance, 0);
+        let vnDeposit = vnSavings.filter(s => !s.terminated).reduce((sum, s) => sum + s.principal, 0);
+        let fundVND = funds.reduce((sum, f) => sum + (f.units * f.currentNav), 0);
+        let propVND = properties.filter(p => !p.soldDate).reduce((sum, p) => sum + toVND(p.valuation, p.currency), 0);
+        let debtVND = debts.reduce((sum, d) => sum + toVND(d.amount, d.currency), 0);
+
+        let assetsVND = toVND(krCash + krDeposit, "KRW") + vnCash + vnDeposit + fundVND + propVND;
+        let netVND = assetsVND - debtVND;
+
+        return {
+          assetsVND,
+          debtVND,
+          netVND,
+          netKRW: toKRW(netVND, "VND"),
+          netUSD: toUSD(netVND, "VND"),
+          krCash,
+          krDeposit,
+          vnCash,
+          vnDeposit,
+          fundVND,
+          propVND
+        };
+      }, [krParking, krSavings, vnParking, vnSavings, funds, properties, debts, fx]);
+
+      // --- GOOGLE APPS SCRIPT WEBHOOK SYNC ---
+      const triggerGoogleSync = async () => {
+        setSyncStatus("syncing");
+        try {
+          const payload = {
+            timestamp: new Date().toISOString(),
+            netWorthVND: totals.netVND,
+            netWorthKRW: totals.netKRW,
+            netWorthUSD: totals.netUSD,
+            transactions: cashflow,
+            assets: { krParking, krSavings, vnParking, vnSavings, funds, properties, debts }
+          };
+
+          const res = await fetch(GOOGLE_APPS_SCRIPT_WEBAPP_URL, {
+            method: "POST",
+            mode: "no-cors", // Standard CORS bypass for Google Apps Script Webhook
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          setSyncStatus("synced");
+          setTimeout(() => setSyncStatus("idle"), 4000);
+        } catch (err) {
+          console.error(err);
+          setSyncStatus("fail");
+          setTimeout(() => setSyncStatus("idle"), 4000);
+        }
+      };
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        if (passInput === "$1Million") {
+          sessionStorage.setItem("auth_pass", "$1Million");
+          setAuthed(true);
+        } else {
+          alert(i18n[lang].wrongPass);
+        }
+      };
+
+      const t = i18n[lang];
+
+      // --- PASSWORD GATE SCREEN ---
+      if (!authed) {
+        return (
+          <div className="min-h-screen bg-cyberDark flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-cyberCard border border-cyberBorder rounded-xl p-6 text-center shadow-2xl">
+              <h1 className="text-2xl font-black tracking-widest text-white mb-2">Youmelittlepenny</h1>
+              <p className="text-xs text-slate-400 mb-6">{t.lockDesc}</p>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <input
+                  type="password"
+                  value={passInput}
+                  onChange={(e) => setPassInput(e.target.value)}
+                  placeholder={t.passPlaceholder}
+                  className="w-full px-4 py-2 text-center text-lg rounded-lg border border-cyberBorder tracking-widest"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-lg transition"
+                >
+                  {t.unlockBtn}
+                </button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      // --- MAIN TERMINAL APPLICATION ---
+      return (
+        <div className="min-h-screen bg-cyberDark text-slate-200">
+          {/* HEADER BAR */}
+          <header className="border-b border-cyberBorder bg-cyberCard/80 backdrop-blur sticky top-0 z-50 px-4 py-3">
+            <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h1 className="text-xl font-black tracking-widest text-white">Youmelittlepenny</h1>
+              </div>
+
+              {/* LIVE FX QUERY & OVERRIDE */}
+              <div className="flex items-center gap-4 text-xs font-mono">
+                <span className="text-slate-400">USD/KRW:</span>
+                <input
+                  type="number"
+                  value={fx.USD_KRW}
+                  onChange={(e) => setFx({...fx, USD_KRW: Number(e.target.value)})}
+                  className="w-16 px-1 py-0.5 rounded text-center text-neonCyan font-bold"
+                />
+                <span className="text-slate-400">USD/VND:</span>
+                <input
+                  type="number"
+                  value={fx.USD_VND}
+                  onChange={(e) => setFx({...fx, USD_VND: Number(e.target.value)})}
+                  className="w-20 px-1 py-0.5 rounded text-center text-neonCyan font-bold"
+                />
+                <span className="text-slate-400">KRW/VND:</span>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={fx.KRW_VND}
+                  onChange={(e) => setFx({...fx, KRW_VND: Number(e.target.value)})}
+                  className="w-14 px-1 py-0.5 rounded text-center text-neonCyan font-bold"
+                />
+              </div>
+
+              {/* CONTROLS */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={triggerGoogleSync}
+                  className={`text-xs px-3 py-1.5 rounded font-bold transition flex items-center gap-1.5 ${
+                    syncStatus === "syncing" ? "bg-amber-500 text-black animate-pulse" :
+                    syncStatus === "synced" ? "bg-neonGreen text-black" :
+                    syncStatus === "fail" ? "bg-rose-500 text-white" :
+                    "bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30"
+                  }`}
+                >
+                  {syncStatus === "syncing" ? t.syncing : syncStatus === "synced" ? t.synced : syncStatus === "fail" ? t.syncFail : t.sync}
+                </button>
+
+                <div className="flex rounded border border-cyberBorder overflow-hidden text-xs font-bold">
+                  <button
+                    onClick={() => setLang("en")}
+                    className={`px-2 py-1 ${lang === "en" ? "bg-cyan-500 text-black" : "bg-slate-900 text-slate-400"}`}
+                  >
+                    EN
+                  </button>
+                  <button
+                    onClick={() => setLang("ko")}
+                    className={`px-2 py-1 ${lang === "ko" ? "bg-cyan-500 text-black" : "bg-slate-900 text-slate-400"}`}
+                  >
+                    KO
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => { sessionStorage.clear(); setAuthed(false); }}
+                  className="text-xs text-rose-400 hover:text-rose-300 ml-2"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* TAB NAVIGATION */}
+            <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto mt-3 pt-2 border-t border-slate-800 text-xs font-semibold">
+              {Object.keys(t.tabs).map((tabKey) => (
+                <button
+                  key={tabKey}
+                  onClick={() => setActiveTab(tabKey)}
+                  className={`px-3 py-1.5 rounded-t-md transition whitespace-nowrap ${
+                    activeTab === tabKey
+                      ? "bg-cyberCard border-b-2 border-neonCyan text-neonCyan font-bold"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {t.tabs[tabKey]}
+                </button>
+              ))}
+            </div>
+          </header>
+
+          {/* MAIN CONTENT AREA */}
+          <main className="max-w-7xl mx-auto p-4 space-y-6">
+
+            {/* ==================== TAB: DASHBOARD (OVERVIEW) ==================== */}
+            {activeTab === "dash" && (
+              <div className="space-y-6">
+                {/* GLOBAL NET WORTH BANNER */}
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-6 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                  <div className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">{t.netWorth}</div>
+                  <div className="text-3xl md:text-5xl font-black text-white neon-text-green font-mono mb-4">
+                    {fmt(totals.netVND, "VND")}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-6 text-sm font-mono pt-3 border-t border-slate-800">
+                    <div>
+                      <span className="text-slate-400 text-xs block">KRW:</span>
+                      <span className="text-neonCyan font-bold">{fmt(totals.netKRW, "KRW")}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 text-xs block">USD:</span>
+                      <span className="text-neonYellow font-bold">{fmt(totals.netUSD, "USD")}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 text-xs block">{t.assets}:</span>
+                      <span className="text-slate-200">{fmt(totals.assetsVND, "VND")}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 text-xs block">{t.liabilities}:</span>
+                      <span className="text-rose-400">-{fmt(totals.debtVND, "VND")}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ASSET ALLOCATION TILES */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+                  <div className="bg-cyberCard border border-cyberBorder p-4 rounded-lg">
+                    <div className="text-slate-400">KR Cash & Deposits</div>
+                    <div className="text-base font-bold text-white mt-1">{fmt(totals.krCash + totals.krDeposit, "KRW")}</div>
+                    <div className="text-slate-500 text-[10px] mt-0.5">{fmt(toVND(totals.krCash + totals.krDeposit, "KRW"), "VND")}</div>
+                  </div>
+                  <div className="bg-cyberCard border border-cyberBorder p-4 rounded-lg">
+                    <div className="text-slate-400">VN Cash & Deposits</div>
+                    <div className="text-base font-bold text-white mt-1">{fmt(totals.vnCash + totals.vnDeposit, "VND")}</div>
+                    <div className="text-slate-500 text-[10px] mt-0.5">{fmt(toKRW(totals.vnCash + totals.vnDeposit, "VND"), "KRW")}</div>
+                  </div>
+                  <div className="bg-cyberCard border border-cyberBorder p-4 rounded-lg">
+                    <div className="text-slate-400">Mutual Funds (CCQ)</div>
+                    <div className="text-base font-bold text-neonCyan mt-1">{fmt(totals.fundVND, "VND")}</div>
+                    <div className="text-slate-500 text-[10px] mt-0.5">{fmt(toUSD(totals.fundVND, "VND"), "USD")}</div>
+                  </div>
+                  <div className="bg-cyberCard border border-cyberBorder p-4 rounded-lg">
+                    <div className="text-slate-400">Property & Housing</div>
+                    <div className="text-base font-bold text-neonYellow mt-1">{fmt(totals.propVND, "VND")}</div>
+                    <div className="text-slate-500 text-[10px] mt-0.5">Anchored Asset</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ==================== TAB: KOREA FINANCE (KRW) ==================== */}
+            {activeTab === "korea" && (
+              <div className="space-y-6">
+                {/* 1. PARKING & SUB-POTS (나눠모으기) */}
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Parking Accounts (파킹통장)</h2>
+                    <button
+                      onClick={() => setKrParking([...krParking, { id: "kp_" + Date.now(), bank: "Toss Bank", name: "New Parking", balance: 0, rate: 2.0, subPots: [] }])}
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                    >
+                      + Add Parking
+                    </button>
+                  </div>
+
+                  {krParking.map((p, pIdx) => (
+                    <div key={p.id} className="border border-slate-800 rounded-lg p-4 space-y-3 bg-cyberDark/50">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div>
+                          <label className="text-slate-500 block mb-1">{t.common.bank}</label>
+                          <select
+                            value={p.bank}
+                            onChange={(e) => {
+                              const updated = [...krParking];
+                              updated[pIdx].bank = e.target.value;
+                              setKrParking(updated);
+                            }}
+                            className="w-full px-2 py-1 rounded border"
+                          >
+                            {KOREA_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-slate-500 block mb-1">{t.common.account}</label>
+                          <input
+                            type="text"
+                            value={p.name}
+                            onChange={(e) => {
+                              const updated = [...krParking];
+                              updated[pIdx].name = e.target.value;
+                              setKrParking(updated);
+                            }}
+                            className="w-full px-2 py-1 rounded border"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-slate-500 block mb-1">{t.common.balance} (KRW)</label>
+                          <input
+                            type="number"
+                            value={p.balance}
+                            onChange={(e) => {
+                              const updated = [...krParking];
+                              updated[pIdx].balance = Number(e.target.value);
+                              setKrParking(updated);
+                            }}
+                            className="w-full px-2 py-1 rounded border font-mono font-bold text-neonCyan"
+                          />
+                        </div>
+                        <div className="flex items-end justify-between">
+                          <div>
+                            <label className="text-slate-500 block mb-1">{t.common.rate} (%)</label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={p.rate}
+                              onChange={(e) => {
+                                const updated = [...krParking];
+                                updated[pIdx].rate = Number(e.target.value);
+                                setKrParking(updated);
+                              }}
+                              className="w-16 px-2 py-1 rounded border font-mono"
+                            />
+                          </div>
+                          <button
+                            onClick={() => setKrParking(krParking.filter((_, idx) => idx !== pIdx))}
+                            className="text-rose-400 hover:text-rose-300 text-xs px-2 py-1"
+                          >
+                            {t.actions.delete}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* SUB-POTS (나눠모으기) */}
+                      <div className="pl-4 border-l-2 border-slate-800 space-y-2 pt-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400 font-mono">Sub-Pots (나눠모으기):</span>
+                          <button
+                            onClick={() => {
+                              const updated = [...krParking];
+                              if (!updated[pIdx].subPots) updated[pIdx].subPots = [];
+                              updated[pIdx].subPots.push({ id: "sp_" + Date.now(), name: "Goal Pot", balance: 0 });
+                              setKrParking(updated);
+                            }}
+                            className="text-[11px] text-cyan-400 hover:underline"
+                          >
+                            + Add Sub-Pot
+                          </button>
+                        </div>
+
+                        {(p.subPots || []).map((sp, spIdx) => (
+                          <div key={sp.id} className="flex items-center gap-3 text-xs">
+                            <input
+                              type="text"
+                              value={sp.name}
+                              onChange={(e) => {
+                                const updated = [...krParking];
+                                updated[pIdx].subPots[spIdx].name = e.target.value;
+                                setKrParking(updated);
+                              }}
+                              className="w-40 px-2 py-0.5 rounded border"
+                            />
+                            <input
+                              type="number"
+                              value={sp.balance}
+                              onChange={(e) => {
+                                const updated = [...krParking];
+                                updated[pIdx].subPots[spIdx].balance = Number(e.target.value);
+                                setKrParking(updated);
+                              }}
+                              className="w-32 px-2 py-0.5 rounded border font-mono text-neonGreen"
+                            />
+                            <button
+                              onClick={() => {
+                                const updated = [...krParking];
+                                updated[pIdx].subPots = updated[pIdx].subPots.filter((_, idx) => idx !== spIdx);
+                                setKrParking(updated);
+                              }}
+                              className="text-slate-500 hover:text-rose-400 text-xs"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 2. TERM & INSTALLMENT SAVINGS (예금 / 적금 / 굴비적금) */}
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
+                      Term & Installment Savings (예금 / 적금)
+                    </h2>
+                    <button
+                      onClick={() => setKrSavings([...krSavings, {
+                        id: "ks_" + Date.now(),
+                        bank: "Toss Bank",
+                        name: "New Savings",
+                        type: "yegeum",
+                        principal: 1000000,
+                        currentPrincipal: 1000000,
+                        rate: 3.5,
+                        taxRate: 15.4,
+                        startDate: new Date().toISOString().slice(0, 10),
+                        maturityDate: "2027-05-09",
+                        earlyWithdrawals: [],
+                        terminated: false,
+                        actualMaturity: null
+                      }])}
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                    >
+                      + Add Korean Deposit
+                    </button>
+                  </div>
+
+                  {krSavings.map((s, sIdx) => {
+                    const daysTotal = Math.max(1, (new Date(s.maturityDate) - new Date(s.startDate)) / (1000 * 3600 * 24));
+                    const daysPassed = Math.min(daysTotal, Math.max(0, (new Date() - new Date(s.startDate)) / (1000 * 3600 * 24)));
+                    const preTaxInterest = s.currentPrincipal * (s.rate / 100) * (daysTotal / 365);
+                    const taxAmt = preTaxInterest * (s.taxRate / 100);
+                    const afterTaxExpected = s.currentPrincipal + (preTaxInterest - taxAmt);
+
+                    return (
+                      <div key={s.id} className="border border-slate-800 rounded-lg p-4 space-y-3 bg-cyberDark/50">
+                        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs">
+                          <div>
+                            <label className="text-slate-500 block mb-1">{t.common.bank}</label>
+                            <select
+                              value={s.bank}
+                              onChange={(e) => {
+                                const updated = [...krSavings];
+                                updated[sIdx].bank = e.target.value;
+                                setKrSavings(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border"
+                            >
+                              {KOREA_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">{t.common.account}</label>
+                            <input
+                              type="text"
+                              value={s.name}
+                              onChange={(e) => {
+                                const updated = [...krSavings];
+                                updated[sIdx].name = e.target.value;
+                                setKrSavings(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">{t.common.principal} (KRW)</label>
+                            <input
+                              type="number"
+                              value={s.currentPrincipal}
+                              onChange={(e) => {
+                                const updated = [...krSavings];
+                                updated[sIdx].currentPrincipal = Number(e.target.value);
+                                setKrSavings(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border font-mono font-bold text-neonCyan"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">{t.common.rate} (%)</label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={s.rate}
+                              onChange={(e) => {
+                                const updated = [...krSavings];
+                                updated[sIdx].rate = Number(e.target.value);
+                                setKrSavings(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">{t.common.tax} (%)</label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={s.taxRate}
+                              onChange={(e) => {
+                                const updated = [...krSavings];
+                                updated[sIdx].taxRate = Number(e.target.value);
+                                setKrSavings(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">Maturity Date</label>
+                            <input
+                              type="date"
+                              value={s.maturityDate}
+                              onChange={(e) => {
+                                const updated = [...krSavings];
+                                updated[sIdx].maturityDate = e.target.value;
+                                setKrSavings(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        {/* LIVE MATURITY & INTERACTIVE WITHDRAWAL SECTION */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-800 text-xs font-mono">
+                          <div className="flex items-center gap-6">
+                            <div>
+                              <span className="text-slate-500">Pre-Tax: </span>
+                              <span className="text-slate-300">{fmt(s.currentPrincipal + preTaxInterest, "KRW")}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500">After-Tax Target: </span>
+                              <span className="text-neonGreen font-bold">{fmt(afterTaxExpected, "KRW")}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500">Days: </span>
+                              <span className="text-cyan-400">{Math.round(daysPassed)} / {Math.round(daysTotal)}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* PARTIAL WITHDRAWAL (중도인출 - UP TO 2 TIMES) */}
+                            <button
+                              disabled={(s.earlyWithdrawals || []).length >= 2}
+                              onClick={() => {
+                                const wAmt = prompt("Enter Principal to withdraw early (KRW):", "1000000");
+                                if (!wAmt || isNaN(wAmt)) return;
+                                const numAmt = Number(wAmt);
+                                if (numAmt > s.currentPrincipal) return alert("Exceeds current principal");
+                                const earlyInterest = prompt("Enter early interest received (KRW, editable):", Math.round(numAmt * 0.01).toString());
+                                const updated = [...krSavings];
+                                if (!updated[sIdx].earlyWithdrawals) updated[sIdx].earlyWithdrawals = [];
+                                updated[sIdx].earlyWithdrawals.push({
+                                  date: new Date().toISOString().slice(0, 10),
+                                  principalWithdrawn: numAmt,
+                                  interestPaid: Number(earlyInterest) || 0
+                                });
+                                updated[sIdx].currentPrincipal -= numAmt;
+                                setKrSavings(updated);
+
+                                // Log to ledger
+                                setLogs([{
+                                  id: "log_" + Date.now(),
+                                  date: new Date().toISOString().slice(0, 10),
+                                  account: s.name,
+                                  event: "Partial Early Withdrawal (중도인출)",
+                                  amount: numAmt,
+                                  currency: "KRW",
+                                  note: `Withdrew ${numAmt} KRW, interest: ${earlyInterest} KRW`
+                                }, ...logs]);
+                              }}
+                              className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded disabled:opacity-30"
+                            >
+                              {t.actions.withdraw} ({(s.earlyWithdrawals || []).length}/2)
+                            </button>
+
+                            <button
+                              onClick={() => setKrSavings(krSavings.filter((_, idx) => idx !== sIdx))}
+                              className="text-rose-400 hover:text-rose-300 px-2 py-1"
+                            >
+                              {t.actions.delete}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* AUDIT LOG FOR THIS SPECIFIC ACCOUNT */}
+                        {(s.earlyWithdrawals || []).length > 0 && (
+                          <div className="text-[11px] font-mono text-slate-400 bg-black/40 p-2 rounded">
+                            {s.earlyWithdrawals.map((ew, ewIdx) => (
+                              <div key={ewIdx}>
+                                • {ew.date}: Withdrew {fmt(ew.principalWithdrawn, "KRW")} | Early Interest Paid: {fmt(ew.interestPaid, "KRW")}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ==================== TAB: VIETNAM FINANCE (VND) ==================== */}
+            {activeTab === "vietnam" && (
+              <div className="space-y-6">
+                {/* 1. VN PARKING / CHECKING */}
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Checking / Liquid (VND)</h2>
+                    <button
+                      onClick={() => setVnParking([...vnParking, { id: "vp_" + Date.now(), bank: "MBBank", name: "New Checking", balance: 0, rate: 0.2 }])}
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                    >
+                      + Add Account
+                    </button>
+                  </div>
+
+                  {vnParking.map((p, pIdx) => (
+                    <div key={p.id} className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs bg-cyberDark/50 p-3 rounded-lg border border-slate-800">
+                      <div>
+                        <label className="text-slate-500 block mb-1">{t.common.bank}</label>
+                        <select
+                          value={p.bank}
+                          onChange={(e) => {
+                            const updated = [...vnParking];
+                            updated[pIdx].bank = e.target.value;
+                            setVnParking(updated);
+                          }}
+                          className="w-full px-2 py-1 rounded border"
+                        >
+                          {VN_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-slate-500 block mb-1">{t.common.account}</label>
+                        <input
+                          type="text"
+                          value={p.name}
+                          onChange={(e) => {
+                            const updated = [...vnParking];
+                            updated[pIdx].name = e.target.value;
+                            setVnParking(updated);
+                          }}
+                          className="w-full px-2 py-1 rounded border"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-slate-500 block mb-1">{t.common.balance} (VND)</label>
+                        <input
+                          type="number"
+                          value={p.balance}
+                          onChange={(e) => {
+                            const updated = [...vnParking];
+                            updated[pIdx].balance = Number(e.target.value);
+                            setVnParking(updated);
+                          }}
+                          className="w-full px-2 py-1 rounded border font-mono font-bold text-neonCyan"
+                        />
+                      </div>
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <label className="text-slate-500 block mb-1">Rate %</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={p.rate}
+                            onChange={(e) => {
+                              const updated = [...vnParking];
+                              updated[pIdx].rate = Number(e.target.value);
+                              setVnParking(updated);
+                            }}
+                            className="w-16 px-2 py-1 rounded border font-mono"
+                          />
+                        </div>
+                        <button
+                          onClick={() => setVnParking(vnParking.filter((_, idx) => idx !== pIdx))}
+                          className="text-rose-400 hover:text-rose-300 text-xs px-2 py-1"
+                        >
+                          {t.actions.delete}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 2. TERM & FLEXIBLE GOAL SAVINGS */}
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
+                      Term & Goal Savings (Tiết kiệm kỳ hạn / Tích lũy)
+                    </h2>
+                    <button
+                      onClick={() => setVnSavings([...vnSavings, {
+                        id: "vs_" + Date.now(),
+                        bank: "MBBank",
+                        name: "Flexible Goal",
+                        type: "flexible",
+                        principal: 3000000,
+                        rate: 5.5,
+                        startDate: new Date().toISOString().slice(0, 10),
+                        maturityDate: "2027-05-09",
+                        earlyRate: 0.2,
+                        terminated: false,
+                        actualMaturity: null
+                      }])}
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                    >
+                      + Add Term Deposit
+                    </button>
+                  </div>
+
+                  {vnSavings.map((s, sIdx) => {
+                    const daysTotal = Math.max(1, (new Date(s.maturityDate) - new Date(s.startDate)) / (1000 * 3600 * 24));
+                    const daysPassed = Math.min(daysTotal, Math.max(0, (new Date() - new Date(s.startDate)) / (1000 * 3600 * 24)));
+                    const expectedInterest = s.principal * (s.rate / 100) * (daysTotal / 365);
+                    const maturityTotal = s.principal + expectedInterest;
+
+                    return (
+                      <div key={s.id} className="border border-slate-800 rounded-lg p-4 space-y-3 bg-cyberDark/50">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                          <div>
+                            <label className="text-slate-500 block mb-1">{t.common.bank}</label>
+                            <select
+                              value={s.bank}
+                              onChange={(e) => {
+                                const updated = [...vnSavings];
+                                updated[sIdx].bank = e.target.value;
+                                setVnSavings(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border"
+                            >
+                              {VN_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">{t.common.account}</label>
+                            <input
+                              type="text"
+                              value={s.name}
+                              onChange={(e) => {
+                                const updated = [...vnSavings];
+                                updated[sIdx].name = e.target.value;
+                                setVnSavings(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">{t.common.principal} (VND)</label>
+                            <input
+                              type="number"
+                              value={s.principal}
+                              onChange={(e) => {
+                                const updated = [...vnSavings];
+                                updated[sIdx].principal = Number(e.target.value);
+                                setVnSavings(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border font-mono font-bold text-neonCyan"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">{t.common.rate} (%)</label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={s.rate}
+                              onChange={(e) => {
+                                const updated = [...vnSavings];
+                                updated[sIdx].rate = Number(e.target.value);
+                                setVnSavings(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">Maturity Date (Target: May 9)</label>
+                            <input
+                              type="date"
+                              value={s.maturityDate}
+                              onChange={(e) => {
+                                const updated = [...vnSavings];
+                                updated[sIdx].maturityDate = e.target.value;
+                                setVnSavings(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        {/* LIVE MATURITY SUMMARY & ACTIONS */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-800 text-xs font-mono">
+                          <div className="flex items-center gap-6">
+                            <div>
+                              <span className="text-slate-500">Expected Total: </span>
+                              <span className="text-neonGreen font-bold">{fmt(maturityTotal, "VND")}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500">Days: </span>
+                              <span className="text-cyan-400">{Math.round(daysPassed)} / {Math.round(daysTotal)}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                const override = prompt("Override actual received maturity payout (VND):", Math.round(maturityTotal).toString());
+                                if (override !== null) {
+                                  const updated = [...vnSavings];
+                                  updated[sIdx].actualMaturity = Number(override);
+                                  setVnSavings(updated);
+                                }
+                              }}
+                              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"
+                            >
+                              Edit Payout
+                            </button>
+                            <button
+                              onClick={() => setVnSavings(vnSavings.filter((_, idx) => idx !== sIdx))}
+                              className="text-rose-400 hover:text-rose-300 px-2 py-1"
+                            >
+                              {t.actions.delete}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ==================== TAB: FUNDS (CCQ) ==================== */}
+            {activeTab === "invest" && (
+              <div className="space-y-6">
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
+                        Vietnam Mutual Funds (CCQ)
+                      </h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Live NAV Monitor & PnL Tracker</p>
+                    </div>
+                    <button
+                      onClick={() => setFunds([...funds, { id: "f_" + Date.now(), code: "NEWFUND", units: 10, buyNav: 10000, currentNav: 10000, history: [10000] }])}
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                    >
+                      + Add Fund
+                    </button>
+                  </div>
+
+                  {funds.map((f, fIdx) => {
+                    const costBasis = f.units * f.buyNav;
+                    const marketVal = f.units * f.currentNav;
+                    const pnl = marketVal - costBasis;
+                    const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
+
+                    return (
+                      <div key={f.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/50 space-y-3">
+                        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs">
+                          <div>
+                            <label className="text-slate-500 block mb-1">Fund Ticker</label>
+                            <input
+                              type="text"
+                              value={f.code}
+                              onChange={(e) => {
+                                const updated = [...funds];
+                                updated[fIdx].code = e.target.value.toUpperCase();
+                                setFunds(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border font-mono font-bold text-white uppercase"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">Units (Số lượng CCQ)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={f.units}
+                              onChange={(e) => {
+                                const updated = [...funds];
+                                updated[fIdx].units = Number(e.target.value);
+                                setFunds(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border font-mono text-neonCyan"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">Buy NAV (Giá vốn)</label>
+                            <input
+                              type="number"
+                              value={f.buyNav}
+                              onChange={(e) => {
+                                const updated = [...funds];
+                                updated[fIdx].buyNav = Number(e.target.value);
+                                setFunds(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">Current NAV (Giá hiện tại)</label>
+                            <input
+                              type="number"
+                              value={f.currentNav}
+                              onChange={(e) => {
+                                const updated = [...funds];
+                                updated[fIdx].currentNav = Number(e.target.value);
+                                setFunds(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border font-mono text-neonGreen font-bold"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-slate-500 block mb-1">Market Value</label>
+                            <div className="px-2 py-1 rounded border border-transparent font-mono font-bold text-white">
+                              {fmt(marketVal, "VND")}
+                            </div>
+                          </div>
+                          <div className="flex items-end justify-between">
+                            <div>
+                              <label className="text-slate-500 block mb-1">PnL / ROI</label>
+                              <div className={`font-mono font-bold ${pnl >= 0 ? "text-neonGreen" : "text-rose-400"}`}>
+                                {pnl >= 0 ? "+" : ""}{fmt(pnl, "VND")} ({pnlPct.toFixed(2)}%)
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setFunds(funds.filter((_, idx) => idx !== fIdx))}
+                              className="text-rose-400 hover:text-rose-300 text-xs px-2 py-1"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* MINI PERFORMANCE SPARKLINE */}
+                        <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                          <div className="flex items-center gap-2">
+                            <span>Historical Points:</span>
+                            {(f.history || []).map((h, hIdx) => (
+                              <span key={hIdx} className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-300">{h}</span>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => {
+                              const newPoint = prompt(`Add NAV datapoint for ${f.code}:`, f.currentNav.toString());
+                              if (newPoint) {
+                                const updated = [...funds];
+                                updated[fIdx].currentNav = Number(newPoint);
+                                if (!updated[fIdx].history) updated[fIdx].history = [];
+                                updated[fIdx].history.push(Number(newPoint));
+                                setFunds(updated);
+                              }
+                            }}
+                            className="text-cyan-400 hover:underline text-[11px]"
+                          >
+                            + Update NAV Point
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ==================== TAB: PROPERTY & PHYSICAL ASSETS ==================== */}
+            {activeTab === "assets" && (
+              <div className="space-y-6">
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
+                        Real Estate & Physical Assets
+                      </h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Apartments, Land, Gold & Major Deposits</p>
+                    </div>
+                    <button
+                      onClick={() => setProperties([...properties, {
+                        id: "p_" + Date.now(),
+                        name: "New Asset",
+                        type: "Real Estate",
+                        address: "Vietnam",
+                        buyDate: new Date().toISOString().slice(0, 10),
+                        buyPrice: 1000000000,
+                        currency: "VND",
+                        valuation: 1000000000,
+                        valDate: new Date().toISOString().slice(0, 10),
+                        soldDate: null,
+                        fundedAccount: "None"
+                      }])}
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                    >
+                      + Add Asset
+                    </button>
+                  </div>
+
+                  {properties.map((p, pIdx) => (
+                    <div key={p.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/50 space-y-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div>
+                          <label className="text-slate-500 block mb-1">Asset Name</label>
+                          <input
+                            type="text"
+                            value={p.name}
+                            onChange={(e) => {
+                              const updated = [...properties];
+                              updated[pIdx].name = e.target.value;
+                              setProperties(updated);
+                            }}
+                            className="w-full px-2 py-1 rounded border font-bold text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-slate-500 block mb-1">Type & Address</label>
+                          <input
+                            type="text"
+                            value={p.address}
+                            onChange={(e) => {
+                              const updated = [...properties];
+                              updated[pIdx].address = e.target.value;
+                              setProperties(updated);
+                            }}
+                            className="w-full px-2 py-1 rounded border"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-slate-500 block mb-1">Current Valuation</label>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              value={p.valuation}
+                              onChange={(e) => {
+                                const updated = [...properties];
+                                updated[pIdx].valuation = Number(e.target.value);
+                                setProperties(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border font-mono font-bold text-neonYellow"
+                            />
+                            <select
+                              value={p.currency}
+                              onChange={(e) => {
+                                const updated = [...properties];
+                                updated[pIdx].currency = e.target.value;
+                                setProperties(updated);
+                              }}
+                              className="w-16 px-1 py-1 rounded border text-xs"
+                            >
+                              <option value="VND">VND</option>
+                              <option value="KRW">KRW</option>
+                              <option value="USD">USD</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex items-end justify-between">
+                          <div>
+                            <label className="text-slate-500 block mb-1">Purchase Date</label>
+                            <input
+                              type="date"
+                              value={p.buyDate}
+                              onChange={(e) => {
+                                const updated = [...properties];
+                                updated[pIdx].buyDate = e.target.value;
+                                setProperties(updated);
+                              }}
+                              className="w-full px-2 py-1 rounded border text-xs"
+                            />
+                          </div>
+                          <button
+                            onClick={() => setProperties(properties.filter((_, idx) => idx !== pIdx))}
+                            className="text-rose-400 hover:text-rose-300 text-xs px-2 py-1"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-slate-800 text-slate-400">
+                        <div>
+                          Converted Value: <span className="text-neonCyan">{fmt(toVND(p.valuation, p.currency), "VND")}</span> | <span className="text-slate-300">{fmt(toKRW(p.valuation, p.currency), "KRW")}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-slate-500">{t.common.fromParking}:</label>
+                          <select
+                            value={p.fundedAccount || "None"}
+                            onChange={(e) => {
+                              const updated = [...properties];
+                              updated[pIdx].fundedAccount = e.target.value;
+                              setProperties(updated);
+                            }}
+                            className="px-2 py-0.5 rounded border text-[11px]"
+                          >
+                            <option value="None">None (Independent)</option>
+                            <option value="KRW Parking">KRW Parking</option>
+                            <option value="VND Parking">VND Parking</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ==================== TAB: LIABILITIES & HELD DEPOSITS ==================== */}
+            {activeTab === "debt" && (
+              <div className="space-y-6">
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-sm font-bold tracking-wider text-rose-400 uppercase font-mono">
+                        Liabilities & Held Deposits (부채 / 보증금 반환 의무)
+                      </h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Deducted from Total Assets to calculate true Net Worth</p>
+                    </div>
+                    <button
+                      onClick={() => setDebts([...debts, {
+                        id: "d_" + Date.now(),
+                        name: "New Liability",
+                        amount: 10000000,
+                        currency: "VND",
+                        party: "Counterparty",
+                        dueDate: "2027-05-09",
+                        note: ""
+                      }])}
+                      className="text-xs px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded"
+                    >
+                      + Add Liability
+                    </button>
+                  </div>
+
+                  {debts.map((d, dIdx) => (
+                    <div key={d.id} className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs bg-cyberDark/50 p-3 rounded-lg border border-slate-800 items-center">
+                      <div>
+                        <label className="text-slate-500 block mb-1">Obligation Name</label>
+                        <input
+                          type="text"
+                          value={d.name}
+                          onChange={(e) => {
+                            const updated = [...debts];
+                            updated[dIdx].name = e.target.value;
+                            setDebts(updated);
+                          }}
+                          className="w-full px-2 py-1 rounded border font-bold text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-slate-500 block mb-1">Beneficiary / Party</label>
+                        <input
+                          type="text"
+                          value={d.party}
+                          onChange={(e) => {
+                            const updated = [...debts];
+                            updated[dIdx].party = e.target.value;
+                            setDebts(updated);
+                          }}
+                          className="w-full px-2 py-1 rounded border"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-slate-500 block mb-1">Amount</label>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            value={d.amount}
+                            onChange={(e) => {
+                              const updated = [...debts];
+                              updated[dIdx].amount = Number(e.target.value);
+                              setDebts(updated);
+                            }}
+                            className="w-full px-2 py-1 rounded border font-mono font-bold text-rose-400"
+                          />
+                          <select
+                            value={d.currency}
+                            onChange={(e) => {
+                              const updated = [...debts];
+                              updated[dIdx].currency = e.target.value;
+                              setDebts(updated);
+                            }}
+                            className="w-16 px-1 py-1 rounded border text-xs"
+                          >
+                            <option value="VND">VND</option>
+                            <option value="KRW">KRW</option>
+                            <option value="USD">USD</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-slate-500 block mb-1">Due / Refund Date</label>
+                        <input
+                          type="date"
+                          value={d.dueDate}
+                          onChange={(e) => {
+                            const updated = [...debts];
+                            updated[dIdx].dueDate = e.target.value;
+                            setDebts(updated);
+                          }}
+                          className="w-full px-2 py-1 rounded border text-xs"
+                        />
+                      </div>
+                      <div className="flex items-end justify-between">
+                        <span className="text-xs text-slate-500 font-mono">Deducts from Net Worth</span>
+                        <button
+                          onClick={() => setDebts(debts.filter((_, idx) => idx !== dIdx))}
+                          className="text-rose-400 hover:text-rose-300 text-xs px-2 py-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ==================== TAB: CASHFLOW & TRANSACTIONS ==================== */}
+            {activeTab === "cashflow" && (
+              <div className="space-y-6">
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
+                        Cashflow & Transaction Terminal
+                      </h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Income, Expenses, Debt Servicing & Transfers</p>
+                    </div>
+                    <button
+                      onClick={() => setCashflow([
+                        {
+                          id: "c_" + Date.now(),
+                          date: new Date().toISOString().slice(0, 10),
+                          type: "Expense",
+                          category: "Living",
+                          amount: 50000,
+                          currency: "KRW",
+                          accountName: "Toss Bank",
+                          desc: "Daily Expense",
+                          fee: 0
+                        },
+                        ...cashflow
+                      ])}
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                    >
+                      + Log Record
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {cashflow.map((c, cIdx) => (
+                      <div key={c.id} className="grid grid-cols-2 md:grid-cols-7 gap-2 text-xs bg-cyberDark/60 p-2.5 rounded border border-slate-800 items-center">
+                        <div>
+                          <input
+                            type="date"
+                            value={c.date}
+                            onChange={(e) => {
+                              const updated = [...cashflow];
+                              updated[cIdx].date = e.target.value;
+                              setCashflow(updated);
+                            }}
+                            className="w-full px-1.5 py-0.5 rounded border text-[11px]"
+                          />
+                        </div>
+                        <div>
+                          <select
+                            value={c.type}
+                            onChange={(e) => {
+                              const updated = [...cashflow];
+                              updated[cIdx].type = e.target.value;
+                              setCashflow(updated);
+                            }}
+                            className="w-full px-1.5 py-0.5 rounded border font-bold"
+                          >
+                            <option value="Income">Income (수입)</option>
+                            <option value="Expense">Expense (지출)</option>
+                            <option value="Lending">Lending (대여/빌려줌)</option>
+                            <option value="Borrowing">Borrowing (차입/빌림)</option>
+                            <option value="Transfer">Transfer (계좌이체)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <input
+                            type="text"
+                            value={c.category}
+                            onChange={(e) => {
+                              const updated = [...cashflow];
+                              updated[cIdx].category = e.target.value;
+                              setCashflow(updated);
+                            }}
+                            placeholder="Category"
+                            className="w-full px-1.5 py-0.5 rounded border"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              value={c.amount}
+                              onChange={(e) => {
+                                const updated = [...cashflow];
+                                updated[cIdx].amount = Number(e.target.value);
+                                setCashflow(updated);
+                              }}
+                              className={`w-full px-1.5 py-0.5 rounded border font-mono font-bold ${
+                                c.type === "Income" ? "text-neonGreen" : "text-rose-400"
+                              }`}
+                            />
+                            <select
+                              value={c.currency}
+                              onChange={(e) => {
+                                const updated = [...cashflow];
+                                updated[cIdx].currency = e.target.value;
+                                setCashflow(updated);
+                              }}
+                              className="w-14 px-1 py-0.5 rounded border text-[10px]"
+                            >
+                              <option value="KRW">KRW</option>
+                              <option value="VND">VND</option>
+                              <option value="USD">USD</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <input
+                            type="text"
+                            value={c.accountName}
+                            onChange={(e) => {
+                              const updated = [...cashflow];
+                              updated[cIdx].accountName = e.target.value;
+                              setCashflow(updated);
+                            }}
+                            placeholder="Account"
+                            className="w-full px-1.5 py-0.5 rounded border"
+                          />
+                        </div>
+                        <div>
+                          <input
+                            type="text"
+                            value={c.desc}
+                            onChange={(e) => {
+                              const updated = [...cashflow];
+                              updated[cIdx].desc = e.target.value;
+                              setCashflow(updated);
+                            }}
+                            placeholder="Description"
+                            className="w-full px-1.5 py-0.5 rounded border"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <input
+                            type="number"
+                            value={c.fee || 0}
+                            onChange={(e) => {
+                              const updated = [...cashflow];
+                              updated[cIdx].fee = Number(e.target.value);
+                              setCashflow(updated);
+                            }}
+                            placeholder="Fee"
+                            className="w-16 px-1.5 py-0.5 rounded border text-[10px] font-mono"
+                          />
+                          <button
+                            onClick={() => setCashflow(cashflow.filter((_, idx) => idx !== cIdx))}
+                            className="text-rose-400 hover:text-rose-300 px-1 text-xs"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ==================== TAB: LEDGER & AUDIT TRAIL ==================== */}
+            {activeTab === "history" && (
+              <div className="space-y-6">
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
+                        Global Audit Ledger
+                      </h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Record of withdrawals, funding deductions & changes</p>
+                    </div>
+                    <button
+                      onClick={() => setLogs([
+                        {
+                          id: "l_" + Date.now(),
+                          date: new Date().toISOString().slice(0, 10),
+                          account: "Manual Note",
+                          event: "Rebalance Check",
+                          amount: 0,
+                          currency: "KRW",
+                          note: "Annual audit check"
+                        },
+                        ...logs
+                      ])}
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                    >
+                      + Add Log
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {logs.map((lg, lIdx) => (
+                      <div key={lg.id} className="grid grid-cols-2 md:grid-cols-6 gap-2 text-xs bg-cyberDark/60 p-2.5 rounded border border-slate-800 items-center font-mono">
+                        <div>
+                          <input
+                            type="date"
+                            value={lg.date}
+                            onChange={(e) => {
+                              const updated = [...logs];
+                              updated[lIdx].date = e.target.value;
+                              setLogs(updated);
+                            }}
+                            className="w-full px-1.5 py-0.5 rounded border text-[11px]"
+                          />
+                        </div>
+                        <div>
+                          <input
+                            type="text"
+                            value={lg.account}
+                            onChange={(e) => {
+                              const updated = [...logs];
+                              updated[lIdx].account = e.target.value;
+                              setLogs(updated);
+                            }}
+                            className="w-full px-1.5 py-0.5 rounded border"
+                          />
+                        </div>
+                        <div>
+                          <input
+                            type="text"
+                            value={lg.event}
+                            onChange={(e) => {
+                              const updated = [...logs];
+                              updated[lIdx].event = e.target.value;
+                              setLogs(updated);
+                            }}
+                            className="w-full px-1.5 py-0.5 rounded border text-neonCyan"
+                          />
+                        </div>
+                        <div>
+                          <input
+                            type="number"
+                            value={lg.amount}
+                            onChange={(e) => {
+                              const updated = [...logs];
+                              updated[lIdx].amount = Number(e.target.value);
+                              setLogs(updated);
+                            }}
+                            className="w-full px-1.5 py-0.5 rounded border font-bold"
+                          />
+                        </div>
+                        <div>
+                          <input
+                            type="text"
+                            value={lg.note}
+                            onChange={(e) => {
+                              const updated = [...logs];
+                              updated[lIdx].note = e.target.value;
+                              setLogs(updated);
+                            }}
+                            placeholder="Notes"
+                            className="w-full px-1.5 py-0.5 rounded border text-slate-400"
+                          />
+                        </div>
+                        <div className="flex items-center justify-end">
+                          <button
+                            onClick={() => setLogs(logs.filter((_, idx) => idx !== lIdx))}
+                            className="text-rose-400 hover:text-rose-300 text-xs px-2"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ==================== TAB: ADVANCED FINANCIAL ANALYSIS ==================== */}
+            {activeTab === "analytics" && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl space-y-2">
+                    <h3 className="text-xs font-mono uppercase text-slate-400 tracking-wider">Passive Inflow Index</h3>
+                    <div className="text-2xl font-bold font-mono text-neonGreen">7,300,000 ₫ / mo</div>
+                    <p className="text-[11px] text-slate-500">Rental property covering 100% of educational & buffer goals</p>
+                  </div>
+                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl space-y-2">
+                    <h3 className="text-xs font-mono uppercase text-slate-400 tracking-wider">Active Savings Ratio</h3>
+                    <div className="text-2xl font-bold font-mono text-neonCyan">~49.5%</div>
+                    <p className="text-[11px] text-slate-500">Korea living expense is lean and optimized at ~1.16M KRW</p>
+                  </div>
+                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl space-y-2">
+                    <h3 className="text-xs font-mono uppercase text-slate-400 tracking-wider">Annual Rebalance Target</h3>
+                    <div className="text-2xl font-bold font-mono text-neonYellow">May 9th</div>
+                    <p className="text-[11px] text-slate-500">All term deposits synchronized for single annual reallocation</p>
+                  </div>
+                </div>
+
+                {/* BACKUP & RESTORE TOOLS */}
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-3">
+                  <h3 className="text-sm font-bold font-mono uppercase text-slate-300">Local JSON Data Backup</h3>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                          fx, krParking, krSavings, vnParking, vnSavings, funds, properties, debts, cashflow, logs
+                        }));
+                        const dlAnchor = document.createElement("a");
+                        dlAnchor.setAttribute("href", dataStr);
+                        dlAnchor.setAttribute("download", `Youmelittlepenny_Backup_${new Date().toISOString().slice(0, 10)}.json`);
+                        dlAnchor.click();
+                      }}
+                      className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 rounded font-mono"
+                    >
+                      {t.actions.export}
+                    </button>
+                    <label className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded font-mono cursor-pointer">
+                      {t.actions.import}
+                      <input
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        onChange={(e) => {
+                          const fileReader = new FileReader();
+                          fileReader.onload = (event) => {
+                            try {
+                              const parsed = JSON.parse(event.target.result);
+                              if (parsed.krParking) setKrParking(parsed.krParking);
+                              if (parsed.krSavings) setKrSavings(parsed.krSavings);
+                              if (parsed.vnParking) setVnParking(parsed.vnParking);
+                              if (parsed.vnSavings) setVnSavings(parsed.vnSavings);
+                              if (parsed.funds) setFunds(parsed.funds);
+                              if (parsed.properties) setProperties(parsed.properties);
+                              if (parsed.debts) setDebts(parsed.debts);
+                              if (parsed.cashflow) setCashflow(parsed.cashflow);
+                              if (parsed.logs) setLogs(parsed.logs);
+                              alert("Import successful!");
+                            } catch (err) {
+                              alert("Invalid JSON format");
+                            }
+                          };
+                          if (e.target.files[0]) fileReader.readAsText(e.target.files[0]);
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
 </body>
 </html>
