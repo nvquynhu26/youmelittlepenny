@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Youmelittlepenny - Wealth Terminal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel Standalone for in-browser JSX parsing -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0b0f17;
+      color: #e2e8f0;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-200 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- HARDCODED BACKEND ENDPOINT (GOOGLE APPS SCRIPT) ---
+    const WEB_APP_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+    // --- DICTIONARY (STRICT SINGLE-LANGUAGE ISOLATION) ---
+    const DICT = {
+      EN: {
+        brand: "Youmelittlepenny",
+        statusSynced: "Synced",
+        statusSyncing: "Syncing...",
+        statusError: "Sync Error",
+        totalNetWorth: "Total Net Worth",
+        savingsRate: "Active Savings Rate",
+        monthlyCashIncome: "Monthly Cash Income",
+        monthlyAllocatedSavings: "Monthly Allocated Savings",
+        chartViewTotal: "Total Net Worth",
+        chartViewBreakdown: "4 Asset Buckets",
+        koreaBanking: "Korea Banking",
+        vietnamBanking: "Vietnam Banking",
+        funds: "Fund Certificates",
+        assetsLiab: "Real Estate & Assets",
+        cashflow: "Cashflow Streams",
+        actions: "Actions",
+        add: "Add",
+        edit: "Edit",
+        delete: "Delete",
+        save: "Save",
+        cancel: "Cancel",
+        topUp: "Top-up",
+        withdraw: "Withdraw",
+        txHistory: "Transaction Ledger",
+        updateNav: "Update NAV",
+        buy: "Buy",
+        sell: "Sell",
+        units: "Units",
+        nav: "NAV",
+        costBasis: "Cost Basis",
+        marketVal: "Market Value",
+        roi: "ROI",
+        trend7d: "7D Trend",
+        purchaseDate: "Acquisition Date",
+        grossVal: "Gross Valuation",
+        debt: "Debt / Mortgage",
+        equity: "Net Equity",
+        balance: "Balance",
+        term: "Term",
+        apr: "Rate",
+        maturity: "Maturity",
+        startDate: "Start Date",
+        type: "Type",
+        active: "Active",
+        passive: "Passive",
+        currency: "Currency",
+        amount: "Amount",
+        name: "Name",
+        confirmDelete: "Confirm deletion?",
+        noTransactions: "No transaction records.",
+        date: "Date"
+      },
+      KO: {
+        brand: "Youmelittlepenny",
+        statusSynced: "동기화됨",
+        statusSyncing: "동기화 중...",
+        statusError: "동기화 오류",
+        totalNetWorth: "총 순자산",
+        savingsRate: "월간 저축률",
+        monthlyCashIncome: "월 총현금 수입",
+        monthlyAllocatedSavings: "월 저축 할당액",
+        chartViewTotal: "총 순자산",
+        chartViewBreakdown: "4대 자산군",
+        koreaBanking: "국내 예적금",
+        vietnamBanking: "베트남 예적금",
+        funds: "펀드 투자",
+        assetsLiab: "부동산 및 실물자산",
+        cashflow: "현금흐름 관리",
+        actions: "관리",
+        add: "추가",
+        edit: "수정",
+        delete: "삭제",
+        save: "저장",
+        cancel: "취소",
+        topUp: "납입",
+        withdraw: "인출",
+        txHistory: "거래 내역",
+        updateNav: "기준가 갱신",
+        buy: "매수",
+        sell: "매도",
+        units: "보유 좌수",
+        nav: "기준가",
+        costBasis: "투자 원금",
+        marketVal: "평가 금액",
+        roi: "수익률",
+        trend7d: "7일 추이",
+        purchaseDate: "취득일",
+        grossVal: "평가 총액",
+        debt: "부채 / 대출",
+        equity: "순자산 지분",
+        balance: "잔액",
+        term: "기간",
+        apr: "금리",
+        maturity: "만기일",
+        startDate: "개설일",
+        type: "구분",
+        active: "근로소득",
+        passive: "금융/임대소득",
+        currency: "통화",
+        amount: "금액",
+        name: "항목명",
+        confirmDelete: "정말 삭제하시겠습니까?",
+        noTransactions: "거래 내역이 없습니다.",
+        date: "일자"
+      }
+    };
+
+    // --- INITIAL DATA STATE ---
+    const INITIAL_STATE = {
+      lang: "EN",
+      baseCur: "KRW",
+      fx: {
+        USDKRW: 1385.5,
+        USDVND: 25420.0,
+        KRWVND: 18.35,
+        lastUpdated: new Date().toLocaleTimeString()
+      },
+      chartViewMode: "total", // "total" | "breakdown"
+      timeHorizon: "1Y",
+      cashflow: [
+        { id: "cf1", name: "Korea Employment", type: "active", cur: "KRW", income: 2400000, savings: 1000000 },
+        { id: "cf2", name: "Korea Edu Support", type: "active", cur: "KRW", income: 0, savings: 200000 },
+        { id: "cf3", name: "VN Property Rental", type: "passive", cur: "VND", income: 7300000, savings: 3500000 }
+      ],
+      koreaAccounts: [
+        {
+          id: "kr_acc_1",
+          name: "Kookmin Fixed Deposit",
+          type: "예금",
+          balance: 9000000,
+          rate: 3.0,
+          taxRate: 15.4,
+          startDate: "2025-11-09",
+          maturityDate: "2026-05-09",
+          withdrawalsLeft: 2,
+          history: [
+            { id: "h1", date: "2025-11-09", type: "Initial Deposit", amount: 9000000, balance: 9000000 }
+          ]
+        },
+        {
+          id: "kr_acc_2",
+          name: "Education Savings",
+          type: "적금",
+          balance: 865000,
+          rate: 1.4,
+          taxRate: 15.4,
+          startDate: "2025-11-09",
+          maturityDate: "2026-05-09",
+          withdrawalsLeft: 2,
+          history: [
+            { id: "h2", date: "2025-11-09", type: "Initial Deposit", amount: 565000, balance: 565000 },
+            { id: "h3", date: "2025-12-09", type: "Top-up", amount: 150000, balance: 715000 },
+            { id: "h4", date: "2026-01-09", type: "Top-up", amount: 150000, balance: 865000 }
+          ]
+        }
+      ],
+      vietnamAccounts: [
+        {
+          id: "vn_acc_1",
+          name: "MB Long-Term Savings",
+          type: "Term Deposit",
+          balance: 7000000,
+          rate: 4.3,
+          startDate: "2025-05-09",
+          maturityDate: "2026-05-09",
+          history: [
+            { id: "vh1", date: "2025-05-09", type: "Initial Deposit", amount: 7000000, balance: 7000000 }
+          ]
+        },
+        {
+          id: "vn_acc_2",
+          name: "Tenant Deposit Escrow",
+          type: "Escrow Deposit",
+          balance: 14000000,
+          rate: 6.2,
+          startDate: "2025-05-09",
+          maturityDate: "2026-05-09",
+          history: [
+            { id: "vh2", date: "2025-05-09", type: "Deposit In", amount: 14000000, balance: 14000000 }
+          ]
+        }
+      ],
+      funds: [
+        {
+          id: "f_mbbond",
+          ticker: "MBBOND",
+          units: 45.2,
+          nav: 22120,
+          costBasis: 1000000,
+          sparkline: [21800, 21850, 21920, 22010, 22050, 22080, 22120],
+          history: [
+            { id: "fh1", date: "2026-01-10", type: "Buy", units: 22.5, price: 21800, total: 490500 },
+            { id: "fh2", date: "2026-02-10", type: "Buy", units: 22.7, price: 22120, total: 509500 }
+          ]
+        },
+        {
+          id: "f_mbam",
+          ticker: "MBAM",
+          units: 48.5,
+          nav: 10310,
+          costBasis: 500000,
+          sparkline: [10250, 10260, 10280, 10290, 10300, 10305, 10310],
+          history: [
+            { id: "fh3", date: "2026-01-15", type: "Buy", units: 48.5, price: 10310, total: 500000 }
+          ]
+        }
+      ],
+      assetsLiabilities: [
+        {
+          id: "al_apt",
+          name: "Vietnam Residential Apartment",
+          type: "Real Estate",
+          cur: "VND",
+          grossVal: 2000000000,
+          debt: 100000000,
+          acqDate: "2023-04-15"
+        },
+        {
+          id: "al_deposit",
+          name: "Korea Housing Lease Deposit",
+          type: "Lease Deposit",
+          cur: "KRW",
+          grossVal: 8000000,
+          debt: 0,
+          acqDate: "2024-05-01"
+        },
+        {
+          id: "al_tenant_debt",
+          name: "Tenant Deposit Liability",
+          type: "Liability",
+          cur: "VND",
+          grossVal: 0,
+          debt: 14000000,
+          acqDate: "2025-05-09"
+        }
+      ]
+    };
+
+    function App() {
+      const [state, setState] = useState(INITIAL_STATE);
+      const [syncStatus, setSyncStatus] = useState("synced"); // synced | syncing | error
+      const [expandedRows, setExpandedRows] = useState({});
+      const [timeStr, setTimeStr] = useState("");
+      const [activeTab, setActiveTab] = useState("dashboard"); // dashboard, banking, funds, assets, cashflow
+
+      // Modals State
+      const [editItem, setEditItem] = useState(null); // { type, data }
+      const [topUpModal, setTopUpModal] = useState(null); // { accountType: 'kr'|'vn', id, name }
+      const [fundTxModal, setFundTxModal] = useState(null); // { fundId, action: 'Buy'|'Sell' }
+
+      const t = DICT[state.lang];
+
+      // Clock ticker
+      useEffect(() => {
+        const updateClock = () => {
+          const now = new Date();
+          setTimeStr(now.toUTCString().replace("GMT", "UTC") + " | " + now.toLocaleTimeString());
+        };
+        updateClock();
+        const interval = setInterval(updateClock, 1000);
+        return () => clearInterval(interval);
+      }, []);
+
+      // FX Converter Helper
+      const toBase = (amount, cur) => {
+        if (!amount) return 0;
+        if (cur === state.baseCur) return amount;
+        
+        // Convert to USD first
+        let inUSD = 0;
+        if (cur === "USD") inUSD = amount;
+        else if (cur === "KRW") inUSD = amount / state.fx.USDKRW;
+        else if (cur === "VND") inUSD = amount / state.fx.USDVND;
+
+        // Convert USD to baseCur
+        if (state.baseCur === "USD") return inUSD;
+        if (state.baseCur === "KRW") return inUSD * state.fx.USDKRW;
+        if (state.baseCur === "VND") return inUSD * state.fx.USDVND;
+        return amount;
+      };
+
+      const formatCur = (amount, currency = state.baseCur) => {
+        const val = typeof amount === "number" ? amount : 0;
+        return new Intl.NumberFormat(state.lang === "KO" ? "ko-KR" : "en-US", {
+          maximumFractionDigits: currency === "USD" ? 2 : 0,
+          minimumFractionDigits: currency === "USD" ? 2 : 0
+        }).format(val) + " " + currency;
+      };
+
+      // --- AGGREGATIONS ---
+      const aggregates = useMemo(() => {
+        // Korea Banking Total
+        const krTotal = state.koreaAccounts.reduce((sum, acc) => sum + toBase(acc.balance, "KRW"), 0);
+
+        // Vietnam Banking Total
+        const vnTotal = state.vietnamAccounts.reduce((sum, acc) => sum + toBase(acc.balance, "VND"), 0);
+
+        // Funds Total
+        const fundsTotal = state.funds.reduce((sum, f) => {
+          const mVal = f.units * f.nav;
+          return sum + toBase(mVal, "VND");
+        }, 0);
+
+        // Real Estate & Assets Equity Total
+        const assetsTotal = state.assetsLiabilities.reduce((sum, a) => {
+          const equity = a.grossVal - a.debt;
+          return sum + toBase(equity, a.cur);
+        }, 0);
+
+        const netWorth = krTotal + vnTotal + fundsTotal + assetsTotal;
+
+        // Cashflow savings rate calculation
+        const totalCashIncomeBase = state.cashflow.reduce((sum, c) => sum + toBase(c.income, c.cur), 0);
+        const totalAllocatedSavingsBase = state.cashflow.reduce((sum, c) => sum + toBase(c.savings, c.cur), 0);
+        const savingsRate = totalCashIncomeBase > 0 ? (totalAllocatedSavingsBase / totalCashIncomeBase) * 100 : 0;
+
+        return {
+          krTotal,
+          vnTotal,
+          fundsTotal,
+          assetsTotal,
+          netWorth,
+          totalCashIncomeBase,
+          totalAllocatedSavingsBase,
+          savingsRate
+        };
+      }, [state]);
+
+      // Toggle Row Expansion
+      const toggleRow = (id) => {
+        setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+      };
+
+      // Top-up Handler
+      const handleTopUpSubmit = (e) => {
+        e.preventDefault();
+        const amt = parseFloat(e.target.amount.value);
+        if (isNaN(amt) || amt <= 0) return;
+
+        const date = e.target.date.value || new Date().toISOString().split("T")[0];
+        const isKr = topUpModal.accountType === "kr";
+
+        setState(prev => {
+          const key = isKr ? "koreaAccounts" : "vietnamAccounts";
+          const updated = prev[key].map(acc => {
+            if (acc.id === topUpModal.id) {
+              const newBal = acc.balance + amt;
+              return {
+                ...acc,
+                balance: newBal,
+                history: [
+                  ...acc.history,
+                  { id: "tx_" + Date.now(), date, type: "Top-up", amount: amt, balance: newBal }
+                ]
+              };
+            }
+            return acc;
+          });
+          return { ...prev, [key]: updated };
+        });
+
+        setTopUpModal(null);
+      };
+
+      // Update NAV Handler
+      const handleUpdateNAV = (fundId) => {
+        setState(prev => {
+          const updated = prev.funds.map(f => {
+            if (f.id === fundId) {
+              // Simulated minor realistic closing move +/- 0.3%
+              const shift = 1 + (Math.random() * 0.006 - 0.003);
+              const newNav = Math.round(f.nav * shift);
+              const newSparkline = [...f.sparkline.slice(1), newNav];
+              return { ...f, nav: newNav, sparkline: newSparkline };
+            }
+            return f;
+          });
+          return { ...prev, funds: updated };
+        });
+      };
+
+      // Fund Buy/Sell Handler
+      const handleFundTxSubmit = (e) => {
+        e.preventDefault();
+        const units = parseFloat(e.target.units.value);
+        const price = parseFloat(e.target.price.value);
+        if (isNaN(units) || units <= 0 || isNaN(price) || price <= 0) return;
+
+        const date = e.target.date.value || new Date().toISOString().split("T")[0];
+        const action = fundTxModal.action;
+
+        setState(prev => {
+          const updated = prev.funds.map(f => {
+            if (f.id === fundTxModal.fundId) {
+              let newUnits = f.units;
+              let newCost = f.costBasis;
+
+              if (action === "Buy") {
+                newUnits += units;
+                newCost += units * price;
+              } else {
+                newUnits = Math.max(0, newUnits - units);
+                newCost = f.units > 0 ? (newCost / f.units) * newUnits : 0;
+              }
+
+              return {
+                ...f,
+                units: parseFloat(newUnits.toFixed(2)),
+                costBasis: Math.round(newCost),
+                history: [
+                  ...f.history,
+                  { id: "ftx_" + Date.now(), date, type: action, units, price, total: Math.round(units * price) }
+                ]
+              };
+            }
+            return f;
+          });
+          return { ...prev, funds: updated };
+        });
+
+        setFundTxModal(null);
+      };
+
+      // Delete Cashflow
+      const deleteCashflow = (id) => {
+        if (!confirm(t.confirmDelete)) return;
+        setState(prev => ({
+          ...prev,
+          cashflow: prev.cashflow.filter(c => c.id !== id)
+        }));
+      };
+
+      return (
+        <div className="flex flex-col min-h-screen">
+          {/* --- TOP STATUS & APP BAR --- */}
+          <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+            {/* Left: Brand & Status */}
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-sm tracking-wider text-cyan-400 font-mono flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-cyan-400 inline-block animate-pulse"></span>
+                {t.brand}
+              </span>
+              <span className="text-slate-600">|</span>
+              <span className="font-mono text-slate-400 hidden sm:inline">{timeStr}</span>
+              <span className={`px-2 py-0.5 rounded text-[11px] font-mono border ${
+                syncStatus === "synced" 
+                  ? "bg-emerald-950/60 text-emerald-400 border-emerald-800/80" 
+                  : "bg-amber-950/60 text-amber-400 border-amber-800/80"
+              }`}>
+                {syncStatus === "synced" ? t.statusSynced : t.statusSyncing}
+              </span>
+            </div>
+
+            {/* Right: Global FX Rates & Toggles */}
+            <div className="flex items-center gap-4">
+              <div className="hidden lg:flex items-center gap-3 font-mono text-[11px] text-slate-400 bg-slate-950/80 px-2.5 py-1 rounded border border-slate-800">
+                <span>USD/KRW: <strong className="text-slate-200">{state.fx.USDKRW}</strong></span>
+                <span className="text-slate-700">|</span>
+                <span>KRW/VND: <strong className="text-slate-200">{state.fx.KRWVND}</strong></span>
+                <span className="text-slate-700">|</span>
+                <span>USD/VND: <strong className="text-slate-200">{state.fx.USDVND}</strong></span>
+              </div>
+
+              {/* Base Currency Toggle */}
+              <div className="flex rounded border border-slate-700 overflow-hidden font-mono">
+                {["KRW", "VND", "USD"].map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setState(p => ({ ...p, baseCur: c }))}
+                    className={`px-2 py-0.5 transition-colors ${state.baseCur === c ? "bg-cyan-600 text-white font-bold" : "bg-slate-900 text-slate-400 hover:bg-slate-800"}`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+
+              {/* Language Toggle */}
+              <div className="flex rounded border border-slate-700 overflow-hidden font-mono font-medium">
+                {["EN", "KO"].map(l => (
+                  <button
+                    key={l}
+                    onClick={() => setState(p => ({ ...p, lang: l }))}
+                    className={`px-2 py-0.5 transition-colors ${state.lang === l ? "bg-slate-200 text-slate-900 font-bold" : "bg-slate-900 text-slate-400 hover:bg-slate-800"}`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </header>
+
+          {/* --- SUB-NAV / TABS --- */}
+          <nav className="border-b border-slate-800 bg-slate-900/50 px-4 flex gap-1 overflow-x-auto text-xs font-mono">
+            {[
+              { id: "dashboard", label: t.chartViewTotal },
+              { id: "banking", label: `${t.koreaBanking} & ${t.vietnamBanking}` },
+              { id: "funds", label: t.funds },
+              { id: "assets", label: t.assetsLiab },
+              { id: "cashflow", label: t.cashflow }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2.5 border-b-2 font-medium transition-colors whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? "border-cyan-400 text-cyan-400 bg-cyan-950/20"
+                    : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* --- MAIN TERMINAL CONTENT --- */}
+          <main className="flex-1 p-4 max-w-7xl mx-auto w-full space-y-6">
+            
+            {/* --- TOP METRICS STRIP --- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Total Net Worth Card */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-lg shadow-sm">
+                <div className="text-xs uppercase tracking-wider text-slate-400 font-mono mb-1">{t.totalNetWorth}</div>
+                <div className="text-2xl sm:text-3xl font-bold font-mono text-cyan-400">
+                  {formatCur(aggregates.netWorth)}
+                </div>
+                <div className="mt-2 text-xs text-slate-500 font-mono flex items-center gap-2">
+                  <span>KRW: {formatCur(toBase(aggregates.netWorth, state.baseCur), "KRW")}</span>
+                  <span>•</span>
+                  <span>VND: {formatCur(toBase(aggregates.netWorth, state.baseCur), "VND")}</span>
+                </div>
+              </div>
+
+              {/* Active Savings Rate Card */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-lg shadow-sm">
+                <div className="text-xs uppercase tracking-wider text-slate-400 font-mono mb-1">{t.savingsRate}</div>
+                <div className="text-2xl sm:text-3xl font-bold font-mono text-emerald-400">
+                  {aggregates.savingsRate.toFixed(1)}%
+                </div>
+                <div className="mt-2 text-xs text-slate-500 font-mono flex items-center justify-between">
+                  <span>{t.monthlyAllocatedSavings}: <strong className="text-slate-300">{formatCur(aggregates.totalAllocatedSavingsBase)}</strong></span>
+                  <span>{t.monthlyCashIncome}: <strong className="text-slate-300">{formatCur(aggregates.totalCashIncomeBase)}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            {/* --- PORTFOLIO DUAL-MODE VISUALIZATION MODULE --- */}
+            {activeTab === "dashboard" && (
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-lg shadow-sm space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold">Portfolio View:</span>
+                    
+                    {/* BUTTON 1: TOTAL NET WORTH ONLY */}
+                    <button
+                      onClick={() => setState(p => ({ ...p, chartViewMode: "total" }))}
+                      className={`px-3 py-1 text-xs font-mono rounded transition-colors ${
+                        state.chartViewMode === "total"
+                          ? "bg-cyan-500 text-slate-950 font-bold"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+                      }`}
+                    >
+                      {t.chartViewTotal}
+                    </button>
+
+                    {/* BUTTON 2: 4 ASSET BUCKETS ONLY */}
+                    <button
+                      onClick={() => setState(p => ({ ...p, chartViewMode: "breakdown" }))}
+                      className={`px-3 py-1 text-xs font-mono rounded transition-colors ${
+                        state.chartViewMode === "breakdown"
+                          ? "bg-cyan-500 text-slate-950 font-bold"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+                      }`}
+                    >
+                      {t.chartViewBreakdown}
+                    </button>
+                  </div>
+
+                  {/* Time Horizon Switcher */}
+                  <div className="flex rounded border border-slate-700 overflow-hidden text-xs font-mono">
+                    {["1M", "3M", "6M", "1Y", "2Y", "5Y"].map(h => (
+                      <button
+                        key={h}
+                        onClick={() => setState(p => ({ ...p, timeHorizon: h }))}
+                        className={`px-2 py-0.5 ${state.timeHorizon === h ? "bg-slate-700 text-cyan-300 font-bold" : "bg-slate-900 text-slate-400 hover:bg-slate-800"}`}
+                      >
+                        {h}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* SVG Visual Canvas */}
+                <div className="h-64 w-full bg-slate-950 rounded border border-slate-800/80 p-2 relative flex flex-col justify-between">
+                  {state.chartViewMode === "total" ? (
+                    // MODE 1: SINGLE TOTAL LINE
+                    <div className="h-full w-full flex flex-col">
+                      <div className="flex justify-between items-center text-xs font-mono text-cyan-400 px-2 pt-1">
+                        <span>Total Net Worth Trajectory ({state.timeHorizon})</span>
+                        <span className="font-bold">{formatCur(aggregates.netWorth)}</span>
+                      </div>
+                      <svg viewBox="0 0 500 150" className="w-full h-full preserve-3d" preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="totalGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3"/>
+                            <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.0"/>
+                          </linearGradient>
+                        </defs>
+                        <path
+                          d="M 0 130 Q 120 115 250 90 T 500 35 L 500 150 L 0 150 Z"
+                          fill="url(#totalGrad)"
+                        />
+                        <path
+                          d="M 0 130 Q 120 115 250 90 T 500 35"
+                          fill="none"
+                          stroke="#22d3ee"
+                          strokeWidth="2.5"
+                        />
+                      </svg>
+                      <div className="flex justify-between text-[10px] font-mono text-slate-500 px-2 pb-1">
+                        <span>Start of Period</span>
+                        <span>Mid Period</span>
+                        <span>Current Valuation</span>
+                      </div>
+                    </div>
+                  ) : (
+                    // MODE 2: 4 ASSET BUCKETS ONLY (SEPARATED LINES)
+                    <div className="h-full w-full flex flex-col">
+                      <div className="flex flex-wrap gap-4 text-[11px] font-mono px-2 pt-1">
+                        <span className="flex items-center gap-1.5 text-blue-400">
+                          <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                          {t.koreaBanking}: {formatCur(aggregates.krTotal)}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-emerald-400">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                          {t.vietnamBanking}: {formatCur(aggregates.vnTotal)}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-purple-400">
+                          <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                          {t.funds}: {formatCur(aggregates.fundsTotal)}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-amber-400">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                          {t.assetsLiab}: {formatCur(aggregates.assetsTotal)}
+                        </span>
+                      </div>
+                      <svg viewBox="0 0 500 150" className="w-full h-full" preserveAspectRatio="none">
+                        {/* Real Estate / Assets Line */}
+                        <path d="M 0 45 L 250 43 L 500 40" fill="none" stroke="#f59e0b" strokeWidth="2" strokeDasharray="3 3"/>
+                        {/* Korea Banking Line */}
+                        <path d="M 0 115 Q 150 110 250 100 T 500 85" fill="none" stroke="#3b82f6" strokeWidth="2"/>
+                        {/* Vietnam Banking Line */}
+                        <path d="M 0 135 Q 150 130 250 120 T 500 110" fill="none" stroke="#10b981" strokeWidth="2"/>
+                        {/* Funds Line */}
+                        <path d="M 0 145 Q 150 142 250 138 T 500 132" fill="none" stroke="#a855f7" strokeWidth="2"/>
+                      </svg>
+                      <div className="flex justify-between text-[10px] font-mono text-slate-500 px-2 pb-1">
+                        <span>Period Open</span>
+                        <span>Dynamic Bucket Growth</span>
+                        <span>Current Balances</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* --- KOREA & VIETNAM BANKING MODULE --- */}
+            {(activeTab === "dashboard" || activeTab === "banking") && (
+              <div className="space-y-6">
+                
+                {/* Korea Banking Section */}
+                <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h2 className="text-sm font-mono font-bold text-slate-200 uppercase tracking-wider">{t.koreaBanking}</h2>
+                    <span className="font-mono text-sm text-cyan-400 font-bold">{formatCur(aggregates.krTotal)}</span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-slate-400">
+                          <th className="py-2 px-3">{t.name}</th>
+                          <th className="py-2 px-3">{t.type}</th>
+                          <th className="py-2 px-3">{t.balance}</th>
+                          <th className="py-2 px-3">{t.apr}</th>
+                          <th className="py-2 px-3">{t.startDate}</th>
+                          <th className="py-2 px-3">{t.maturity}</th>
+                          <th className="py-2 px-3 text-right">{t.actions}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60">
+                        {state.koreaAccounts.map(acc => (
+                          <React.Fragment key={acc.id}>
+                            <tr className="hover:bg-slate-800/40 transition-colors">
+                              <td className="py-2.5 px-3">
+                                <button
+                                  onClick={() => toggleRow(acc.id)}
+                                  className="text-cyan-400 hover:underline font-bold text-left flex items-center gap-1.5"
+                                >
+                                  <span>{expandedRows[acc.id] ? "▼" : "▶"}</span>
+                                  {acc.name}
+                                </button>
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-300">{acc.type}</td>
+                              <td className="py-2.5 px-3 font-bold text-slate-100">{formatCur(acc.balance, "KRW")}</td>
+                              <td className="py-2.5 px-3 text-emerald-400">{acc.rate}%</td>
+                              <td className="py-2.5 px-3 text-slate-400">{acc.startDate}</td>
+                              <td className="py-2.5 px-3 text-slate-400">{acc.maturityDate}</td>
+                              <td className="py-2.5 px-3 text-right space-x-2">
+                                <button
+                                  onClick={() => setTopUpModal({ accountType: "kr", id: acc.id, name: acc.name })}
+                                  className="px-2 py-1 bg-cyan-950 text-cyan-400 border border-cyan-800 rounded hover:bg-cyan-900"
+                                >
+                                  {t.topUp}
+                                </button>
+                              </td>
+                            </tr>
+
+                            {/* Sub-row Transaction Ledger */}
+                            {expandedRows[acc.id] && (
+                              <tr>
+                                <td colSpan="7" className="bg-slate-950/80 p-3 pl-8 border-l-2 border-cyan-500">
+                                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                    {t.txHistory} - {acc.name}
+                                  </div>
+                                  <table className="w-full text-[11px]">
+                                    <thead>
+                                      <tr className="text-slate-500 border-b border-slate-800">
+                                        <th className="py-1">{t.date}</th>
+                                        <th className="py-1">{t.type}</th>
+                                        <th className="py-1">{t.amount}</th>
+                                        <th className="py-1">{t.balance}</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-900">
+                                      {acc.history.map(h => (
+                                        <tr key={h.id} className="text-slate-300">
+                                          <td className="py-1">{h.date}</td>
+                                          <td className="py-1 text-cyan-300">{h.type}</td>
+                                          <td className="py-1 font-bold">+{formatCur(h.amount, "KRW")}</td>
+                                          <td className="py-1 text-slate-400">{formatCur(h.balance, "KRW")}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Vietnam Banking Section */}
+                <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h2 className="text-sm font-mono font-bold text-slate-200 uppercase tracking-wider">{t.vietnamBanking}</h2>
+                    <span className="font-mono text-sm text-cyan-400 font-bold">{formatCur(aggregates.vnTotal)}</span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-slate-400">
+                          <th className="py-2 px-3">{t.name}</th>
+                          <th className="py-2 px-3">{t.type}</th>
+                          <th className="py-2 px-3">{t.balance}</th>
+                          <th className="py-2 px-3">{t.apr}</th>
+                          <th className="py-2 px-3">{t.startDate}</th>
+                          <th className="py-2 px-3">{t.maturity}</th>
+                          <th className="py-2 px-3 text-right">{t.actions}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60">
+                        {state.vietnamAccounts.map(acc => (
+                          <React.Fragment key={acc.id}>
+                            <tr className="hover:bg-slate-800/40 transition-colors">
+                              <td className="py-2.5 px-3">
+                                <button
+                                  onClick={() => toggleRow(acc.id)}
+                                  className="text-cyan-400 hover:underline font-bold text-left flex items-center gap-1.5"
+                                >
+                                  <span>{expandedRows[acc.id] ? "▼" : "▶"}</span>
+                                  {acc.name}
+                                </button>
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-300">{acc.type}</td>
+                              <td className="py-2.5 px-3 font-bold text-slate-100">{formatCur(acc.balance, "VND")}</td>
+                              <td className="py-2.5 px-3 text-emerald-400">{acc.rate}%</td>
+                              <td className="py-2.5 px-3 text-slate-400">{acc.startDate}</td>
+                              <td className="py-2.5 px-3 text-slate-400">{acc.maturityDate}</td>
+                              <td className="py-2.5 px-3 text-right">
+                                <button
+                                  onClick={() => setTopUpModal({ accountType: "vn", id: acc.id, name: acc.name })}
+                                  className="px-2 py-1 bg-cyan-950 text-cyan-400 border border-cyan-800 rounded hover:bg-cyan-900"
+                                >
+                                  {t.topUp}
+                                </button>
+                              </td>
+                            </tr>
+
+                            {/* Sub-row Transaction Ledger */}
+                            {expandedRows[acc.id] && (
+                              <tr>
+                                <td colSpan="7" className="bg-slate-950/80 p-3 pl-8 border-l-2 border-emerald-500">
+                                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                    {t.txHistory} - {acc.name}
+                                  </div>
+                                  <table className="w-full text-[11px]">
+                                    <thead>
+                                      <tr className="text-slate-500 border-b border-slate-800">
+                                        <th className="py-1">{t.date}</th>
+                                        <th className="py-1">{t.type}</th>
+                                        <th className="py-1">{t.amount}</th>
+                                        <th className="py-1">{t.balance}</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-900">
+                                      {acc.history.map(h => (
+                                        <tr key={h.id} className="text-slate-300">
+                                          <td className="py-1">{h.date}</td>
+                                          <td className="py-1 text-emerald-300">{h.type}</td>
+                                          <td className="py-1 font-bold">+{formatCur(h.amount, "VND")}</td>
+                                          <td className="py-1 text-slate-400">{formatCur(h.balance, "VND")}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* --- FUND CERTIFICATES MODULE --- */}
+            {(activeTab === "dashboard" || activeTab === "funds") && (
+              <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <h2 className="text-sm font-mono font-bold text-slate-200 uppercase tracking-wider">{t.funds}</h2>
+                  <span className="font-mono text-sm text-cyan-400 font-bold">{formatCur(aggregates.fundsTotal)}</span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400">
+                        <th className="py-2 px-3">Ticker</th>
+                        <th className="py-2 px-3">{t.units}</th>
+                        <th className="py-2 px-3">{t.nav}</th>
+                        <th className="py-2 px-3">{t.costBasis}</th>
+                        <th className="py-2 px-3">{t.marketVal}</th>
+                        <th className="py-2 px-3">{t.roi}</th>
+                        <th className="py-2 px-3">{t.trend7d}</th>
+                        <th className="py-2 px-3 text-right">{t.actions}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {state.funds.map(f => {
+                        const mVal = f.units * f.nav;
+                        const roi = f.costBasis > 0 ? ((mVal - f.costBasis) / f.costBasis) * 100 : 0;
+                        return (
+                          <React.Fragment key={f.id}>
+                            <tr className="hover:bg-slate-800/40 transition-colors">
+                              <td className="py-2.5 px-3">
+                                <button
+                                  onClick={() => toggleRow(f.id)}
+                                  className="text-purple-400 hover:underline font-bold text-left flex items-center gap-1.5"
+                                >
+                                  <span>{expandedRows[f.id] ? "▼" : "▶"}</span>
+                                  {f.ticker}
+                                </button>
+                              </td>
+                              <td className="py-2.5 px-3 font-bold text-slate-200">{f.units}</td>
+                              <td className="py-2.5 px-3">{formatCur(f.nav, "VND")}</td>
+                              <td className="py-2.5 px-3 text-slate-400">{formatCur(f.costBasis, "VND")}</td>
+                              <td className="py-2.5 px-3 font-bold text-slate-100">{formatCur(mVal, "VND")}</td>
+                              <td className={`py-2.5 px-3 font-bold ${roi >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                                {roi >= 0 ? "+" : ""}{roi.toFixed(2)}%
+                              </td>
+                              <td className="py-2.5 px-3 w-28">
+                                {/* Dynamic SVG Sparkline */}
+                                <svg viewBox="0 0 100 25" className="w-24 h-6">
+                                  <polyline
+                                    fill="none"
+                                    stroke={roi >= 0 ? "#10b981" : "#f43f5e"}
+                                    strokeWidth="2"
+                                    points={f.sparkline.map((val, idx) => {
+                                      const min = Math.min(...f.sparkline);
+                                      const max = Math.max(...f.sparkline);
+                                      const range = max - min || 1;
+                                      const x = idx * (100 / (f.sparkline.length - 1));
+                                      const y = 22 - ((val - min) / range) * 18;
+                                      return `${x},${y}`;
+                                    }).join(" ")}
+                                  />
+                                </svg>
+                              </td>
+                              <td className="py-2.5 px-3 text-right space-x-2">
+                                <button
+                                  onClick={() => handleUpdateNAV(f.id)}
+                                  className="px-2 py-1 bg-slate-800 text-slate-300 rounded hover:bg-slate-700"
+                                >
+                                  {t.updateNav}
+                                </button>
+                                <button
+                                  onClick={() => setFundTxModal({ fundId: f.id, action: "Buy" })}
+                                  className="px-2 py-1 bg-purple-950 text-purple-300 border border-purple-800 rounded hover:bg-purple-900"
+                                >
+                                  {t.buy}
+                                </button>
+                                <button
+                                  onClick={() => setFundTxModal({ fundId: f.id, action: "Sell" })}
+                                  className="px-2 py-1 bg-slate-800 text-slate-300 rounded hover:bg-slate-700"
+                                >
+                                  {t.sell}
+                                </button>
+                              </td>
+                            </tr>
+
+                            {/* Sub-row Transaction History */}
+                            {expandedRows[f.id] && (
+                              <tr>
+                                <td colSpan="8" className="bg-slate-950/80 p-3 pl-8 border-l-2 border-purple-500">
+                                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                    {t.txHistory} - {f.ticker}
+                                  </div>
+                                  <table className="w-full text-[11px]">
+                                    <thead>
+                                      <tr className="text-slate-500 border-b border-slate-800">
+                                        <th className="py-1">{t.date}</th>
+                                        <th className="py-1">{t.type}</th>
+                                        <th className="py-1">{t.units}</th>
+                                        <th className="py-1">{t.nav}</th>
+                                        <th className="py-1">{t.amount}</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-900">
+                                      {f.history.map(h => (
+                                        <tr key={h.id} className="text-slate-300">
+                                          <td className="py-1">{h.date}</td>
+                                          <td className={`py-1 font-bold ${h.type === "Buy" ? "text-purple-300" : "text-amber-300"}`}>{h.type}</td>
+                                          <td className="py-1">{h.units}</td>
+                                          <td className="py-1">{formatCur(h.price, "VND")}</td>
+                                          <td className="py-1 font-bold">{formatCur(h.total, "VND")}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* --- REAL ESTATE & OTHER ASSETS MODULE --- */}
+            {(activeTab === "dashboard" || activeTab === "assets") && (
+              <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <h2 className="text-sm font-mono font-bold text-slate-200 uppercase tracking-wider">{t.assetsLiab}</h2>
+                  <span className="font-mono text-sm text-cyan-400 font-bold">{formatCur(aggregates.assetsTotal)}</span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400">
+                        <th className="py-2 px-3">{t.name}</th>
+                        <th className="py-2 px-3">{t.type}</th>
+                        <th className="py-2 px-3">{t.purchaseDate}</th>
+                        <th className="py-2 px-3">{t.grossVal}</th>
+                        <th className="py-2 px-3">{t.debt}</th>
+                        <th className="py-2 px-3">{t.equity}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {state.assetsLiabilities.map(a => {
+                        const eq = a.grossVal - a.debt;
+                        return (
+                          <tr key={a.id} className="hover:bg-slate-800/40 transition-colors">
+                            <td className="py-2.5 px-3 font-bold text-slate-200">{a.name}</td>
+                            <td className="py-2.5 px-3 text-slate-400">{a.type}</td>
+                            <td className="py-2.5 px-3 text-slate-400">{a.acqDate}</td>
+                            <td className="py-2.5 px-3 text-slate-300">{formatCur(a.grossVal, a.cur)}</td>
+                            <td className="py-2.5 px-3 text-rose-400 font-bold">{formatCur(a.debt, a.cur)}</td>
+                            <td className="py-2.5 px-3 font-bold text-amber-400">{formatCur(eq, a.cur)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* --- CASHFLOW STREAMS MODULE --- */}
+            {(activeTab === "dashboard" || activeTab === "cashflow") && (
+              <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <h2 className="text-sm font-mono font-bold text-slate-200 uppercase tracking-wider">{t.cashflow}</h2>
+                  <button
+                    onClick={() => {
+                      const newId = "cf_" + Date.now();
+                      const newItem = { id: newId, name: "New Stream", type: "active", cur: "KRW", income: 1000000, savings: 500000 };
+                      setState(p => ({ ...p, cashflow: [...p.cashflow, newItem] }));
+                    }}
+                    className="px-2.5 py-1 text-xs font-mono bg-cyan-600 text-white rounded hover:bg-cyan-500 transition-colors"
+                  >
+                    + {t.add}
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400">
+                        <th className="py-2 px-3">{t.name}</th>
+                        <th className="py-2 px-3">{t.type}</th>
+                        <th className="py-2 px-3">{t.currency}</th>
+                        <th className="py-2 px-3">{t.monthlyCashIncome}</th>
+                        <th className="py-2 px-3">{t.monthlyAllocatedSavings}</th>
+                        <th className="py-2 px-3 text-right">{t.actions}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {state.cashflow.map(c => (
+                        <tr key={c.id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="py-2.5 px-3 font-bold text-slate-200">{c.name}</td>
+                          <td className="py-2.5 px-3 text-slate-400">{c.type === "active" ? t.active : t.passive}</td>
+                          <td className="py-2.5 px-3 text-slate-300">{c.cur}</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-100">{formatCur(c.income, c.cur)}</td>
+                          <td className="py-2.5 px-3 font-bold text-emerald-400">{formatCur(c.savings, c.cur)}</td>
+                          <td className="py-2.5 px-3 text-right">
+                            <button
+                              onClick={() => deleteCashflow(c.id)}
+                              className="px-2 py-0.5 text-rose-400 hover:text-rose-200 bg-rose-950/40 rounded border border-rose-900/60"
+                            >
+                              {t.delete}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+          </main>
+
+          {/* --- TOP-UP MODAL --- */}
+          {topUpModal && (
+            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-lg max-w-sm w-full p-5 space-y-4 font-mono text-xs shadow-xl">
+                <div className="font-bold text-slate-200 text-sm border-b border-slate-800 pb-2">
+                  {t.topUp}: {topUpModal.name}
+                </div>
+                <form onSubmit={handleTopUpSubmit} className="space-y-3">
+                  <div>
+                    <label className="text-slate-400 block mb-1">{t.amount} ({topUpModal.accountType === "kr" ? "KRW" : "VND"})</label>
+                    <input
+                      name="amount"
+                      type="number"
+                      required
+                      placeholder="e.g. 500000"
+                      className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-100 focus:border-cyan-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 block mb-1">{t.date}</label>
+                    <input
+                      name="date"
+                      type="date"
+                      defaultValue={new Date().toISOString().split("T")[0]}
+                      className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-100 focus:border-cyan-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setTopUpModal(null)}
+                      className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded hover:bg-slate-700"
+                    >
+                      {t.cancel}
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-3 py-1.5 bg-cyan-600 text-white rounded hover:bg-cyan-500 font-bold"
+                    >
+                      {t.save}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* --- FUND TRANSACTION MODAL --- */}
+          {fundTxModal && (
+            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-lg max-w-sm w-full p-5 space-y-4 font-mono text-xs shadow-xl">
+                <div className="font-bold text-slate-200 text-sm border-b border-slate-800 pb-2">
+                  {fundTxModal.action === "Buy" ? t.buy : t.sell}
+                </div>
+                <form onSubmit={handleFundTxSubmit} className="space-y-3">
+                  <div>
+                    <label className="text-slate-400 block mb-1">{t.units}</label>
+                    <input
+                      name="units"
+                      type="number"
+                      step="any"
+                      required
+                      placeholder="e.g. 25"
+                      className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-100 focus:border-purple-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 block mb-1">{t.nav} (VND)</label>
+                    <input
+                      name="price"
+                      type="number"
+                      step="any"
+                      required
+                      placeholder="e.g. 22100"
+                      className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-100 focus:border-purple-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 block mb-1">{t.date}</label>
+                    <input
+                      name="date"
+                      type="date"
+                      defaultValue={new Date().toISOString().split("T")[0]}
+                      className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-100 focus:border-purple-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setFundTxModal(null)}
+                      className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded hover:bg-slate-700"
+                    >
+                      {t.cancel}
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-500 font-bold"
+                    >
+                      {t.save}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
