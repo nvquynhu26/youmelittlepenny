@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Youmelittlepenny</title>
   
-  <!-- Fonts & Tailwind -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -33,11 +32,10 @@
     }
   </script>
 
-  <!-- React 18, ReactDOM, Babel & Recharts -->
+  <!-- React 18 & Babel Standalone -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
 
   <style>
     body { background-color: #05070a; color: #f1f5f9; }
@@ -60,14 +58,12 @@
 
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
-    const { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid } = window.Recharts;
 
     // ==========================================
     // ⚙️ GAS DEPLOYMENT URL (PASTE HERE)
     // ==========================================
     const GOOGLE_APPS_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzP7xhlbrMqSy_7ZrVNDNSh9drGYFGc3WVQZEF1ZVcF21DjLThvLYjyEBAjHvOh2AOm4Q/exec";
 
-    // --- 6 JARS CANONICAL DATA STRUCTURE ---
     const DEFAULT_JARS = [
       {
         id: "NEC",
@@ -148,21 +144,17 @@
     const VN_BANKS = ["MBBank", "Techcombank", "Vietcombank", "VPBank", "ACB", "TPBank"];
 
     function App() {
-      // --- AUTHENTICATION ---
       const [authed, setAuthed] = useState(() => sessionStorage.getItem("auth_pass") === "$1Million");
       const [passInput, setPassInput] = useState("");
       const [lang, setLang] = useState("en");
       const [activeTab, setActiveTab] = useState("dash");
       const [syncStatus, setSyncStatus] = useState("idle");
 
-      // --- EDITING LOCK STATE (Row ID being edited) ---
       const [editingId, setEditingId] = useState(null);
       const [editForm, setEditForm] = useState({});
 
-      // --- REAL-TIME EXCHANGE RATES ---
       const [fx, setFx] = useState({ USD_KRW: 1385, USD_VND: 25420, KRW_VND: 18.35 });
 
-      // Automatically fetch latest FX rates on launch
       useEffect(() => {
         async function fetchRates() {
           try {
@@ -184,14 +176,12 @@
         fetchRates();
       }, []);
 
-      // --- 6 JARS CONFIG ---
       const [jars, setJars] = useState(() => {
         const saved = localStorage.getItem("pen_jars");
         return saved ? JSON.parse(saved) : DEFAULT_JARS;
       });
       const [showJarModal, setShowJarModal] = useState(false);
 
-      // --- DATA STATES ---
       const [krParking, setKrParking] = useState(() => {
         const saved = localStorage.getItem("pen_kr_parking");
         return saved ? JSON.parse(saved) : [
@@ -255,7 +245,6 @@
         ];
       });
 
-      // --- SAVE TO LOCALSTORAGE ---
       useEffect(() => { localStorage.setItem("pen_jars", JSON.stringify(jars)); }, [jars]);
       useEffect(() => { localStorage.setItem("pen_kr_parking", JSON.stringify(krParking)); }, [krParking]);
       useEffect(() => { localStorage.setItem("pen_kr_savings", JSON.stringify(krSavings)); }, [krSavings]);
@@ -266,7 +255,6 @@
       useEffect(() => { localStorage.setItem("pen_debts", JSON.stringify(debts)); }, [debts]);
       useEffect(() => { localStorage.setItem("pen_cashflow", JSON.stringify(cashflow)); }, [cashflow]);
 
-      // --- FX CONVERSION HELPERS ---
       const toVND = (val, cur) => cur === "VND" ? val : cur === "KRW" ? val * fx.KRW_VND : val * fx.USD_VND;
       const toKRW = (val, cur) => cur === "KRW" ? val : cur === "VND" ? val / fx.KRW_VND : val * fx.USD_KRW;
       const toUSD = (val, cur) => cur === "USD" ? val : cur === "VND" ? val / fx.USD_VND : val / fx.USD_KRW;
@@ -279,7 +267,6 @@
         return Number(val).toLocaleString();
       };
 
-      // --- RECOMPUTE TOTALS & NET WORTH ---
       const totals = useMemo(() => {
         const krCash = krParking.reduce((sum, p) => sum + p.balance + (p.subPots || []).reduce((spSum, sp) => spSum + sp.balance, 0), 0);
         const krDeposit = krSavings.reduce((sum, s) => sum + s.currentPrincipal, 0);
@@ -313,30 +300,6 @@
         };
       }, [krParking, krSavings, vnParking, vnSavings, funds, properties, debts, fx]);
 
-      // --- AUTOMATED FMARKET NAV FETCHER PROXY ---
-      const refreshNavData = async () => {
-        try {
-          // Public proxy scraper bridge for Vietnam Fund NAVs
-          const updatedFunds = await Promise.all(funds.map(async (f) => {
-            try {
-              const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://fmarket.vn/api/product/public/${f.code}`)}`);
-              const json = await res.json();
-              const parsed = JSON.parse(json.contents);
-              if (parsed && parsed.data && parsed.data.nav) {
-                const latest = parsed.data.nav;
-                return { ...f, currentNav: latest, history: [...(f.history || []), latest] };
-              }
-            } catch (e) { /* Fallback to existing */ }
-            return f;
-          }));
-          setFunds(updatedFunds);
-          alert("NAV data successfully refreshed via Fmarket sync bridge.");
-        } catch (e) {
-          alert("NAV live feed unavailable. Manual edit mode active.");
-        }
-      };
-
-      // --- GOOGLE APPS SCRIPT CLOUD SYNC ---
       const triggerGoogleSync = async () => {
         setSyncStatus("syncing");
         try {
@@ -368,7 +331,6 @@
         }
       };
 
-      // --- EDITING LOCK / UNLOCK CONTROLLERS ---
       const startEdit = (id, obj) => {
         setEditingId(id);
         setEditForm({ ...obj });
@@ -379,7 +341,6 @@
         setEditForm({});
       };
 
-      // --- TAB DEFINITIONS (MINIMALIST & CYBERPUNK) ---
       const TABS = {
         dash: lang === "en" ? "Overview" : "대시보드",
         korea: lang === "en" ? "Korea" : "한국 금융",
@@ -423,12 +384,10 @@
 
       return (
         <div className="min-h-screen bg-cyberDark text-slate-200 font-sans">
-          {/* HEADER BAR */}
           <header className="border-b border-cyberBorder bg-cyberCard/90 backdrop-blur sticky top-0 z-50 px-4 py-3">
             <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
               <h1 className="text-xl font-black tracking-widest text-white">Youmelittlepenny</h1>
 
-              {/* REAL-TIME FX TICKER (LIVE & AUTO-UPDATED) */}
               <div className="flex items-center gap-4 text-xs font-mono bg-cyberDark px-3 py-1.5 rounded-lg border border-slate-800">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-neonGreen animate-pulse"></span>
@@ -445,7 +404,6 @@
                 </div>
               </div>
 
-              {/* CONTROLS */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={triggerGoogleSync}
@@ -468,7 +426,6 @@
               </div>
             </div>
 
-            {/* TAB SELECTOR */}
             <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto mt-3 pt-2 border-t border-slate-800/80 text-xs font-medium">
               {Object.keys(TABS).map((k) => (
                 <button
@@ -486,13 +443,9 @@
             </div>
           </header>
 
-          {/* MAIN VIEWPORT */}
           <main className="max-w-7xl mx-auto p-4 space-y-6">
-
-            {/* ==================== TAB: DASHBOARD (OVERVIEW) ==================== */}
             {activeTab === "dash" && (
               <div className="space-y-6">
-                {/* GLOBAL NET WORTH BANNER */}
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-6 relative overflow-hidden">
                   <div className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">{lang === "en" ? "Net Worth" : "순자산"}</div>
                   <div className="text-3xl md:text-5xl font-black text-white neon-glow-green font-mono mb-4">
@@ -518,66 +471,66 @@
                   </div>
                 </div>
 
-                {/* CHARTS: ALLOCATION DONUT & NET WORTH SPARKLINE */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl">
-                    <h2 className="text-xs font-mono font-bold uppercase text-slate-400 tracking-wider mb-4">
-                      {lang === "en" ? "Asset Allocation" : "자산 배분 구조"}
+                  {/* ALLOCATION BARS (Pure Native SVG/CSS - No External Dependency) */}
+                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl space-y-4">
+                    <h2 className="text-xs font-mono font-bold uppercase text-slate-400 tracking-wider">
+                      {lang === "en" ? "Asset Allocation Breakdown" : "자산 배분 구조"}
                     </h2>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie data={totals.breakdownData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={4}>
-                            {totals.breakdownData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value) => fmt(value, "VND")} contentStyle={{ backgroundColor: "#0b0f19", borderColor: "#1e293b", fontFamily: "JetBrains Mono" }} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 mt-2 text-xs font-mono">
-                      {totals.breakdownData.map((d, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }}></span>
-                          <span className="text-slate-400">{d.name}:</span>
-                          <span className="text-white font-bold">{fmt(d.value, "VND")}</span>
-                        </div>
-                      ))}
+                    <div className="space-y-3 font-mono text-xs">
+                      {totals.breakdownData.map((d, i) => {
+                        const pct = totals.assetsVND > 0 ? (d.value / totals.assetsVND) * 100 : 0;
+                        return (
+                          <div key={i} className="space-y-1">
+                            <div className="flex justify-between text-slate-300">
+                              <span className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }}></span>
+                                {d.name}
+                              </span>
+                              <span className="font-bold">{fmt(d.value, "VND")} ({pct.toFixed(1)}%)</span>
+                            </div>
+                            <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: d.color }}></div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl">
-                    <h2 className="text-xs font-mono font-bold uppercase text-slate-400 tracking-wider mb-4">
-                      {lang === "en" ? "Net Worth Trajectory (1M - 1Y)" : "순자산 변동 추이"}
+                  {/* SPARKLINE (Native Lightweight SVG) */}
+                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl space-y-4">
+                    <h2 className="text-xs font-mono font-bold uppercase text-slate-400 tracking-wider">
+                      {lang === "en" ? "Net Worth Trajectory" : "순자산 변동 추이"}
                     </h2>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={[
-                          { name: '1Y Ago', val: totals.netVND * 0.88 },
-                          { name: '6M Ago', val: totals.netVND * 0.92 },
-                          { name: '3M Ago', val: totals.netVND * 0.96 },
-                          { name: '1M Ago', val: totals.netVND * 0.98 },
-                          { name: 'Now', val: totals.netVND }
-                        ]}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                          <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'JetBrains Mono' }} />
-                          <YAxis stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => (v / 1e9).toFixed(1) + "B"} />
-                          <Tooltip formatter={(v) => fmt(v, "VND")} contentStyle={{ backgroundColor: "#0b0f19", borderColor: "#1e293b", fontFamily: "JetBrains Mono" }} />
-                          <Line type="monotone" dataKey="val" stroke="#00ff66" strokeWidth={3} dot={{ r: 4, fill: '#00ff66' }} />
-                        </LineChart>
-                      </ResponsiveContainer>
+                    <div className="h-44 w-full flex items-center justify-center">
+                      <svg className="w-full h-full overflow-visible" viewBox="0 0 400 120">
+                        <defs>
+                          <linearGradient id="neonGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#00ff66" stopOpacity="0.3"/>
+                            <stop offset="100%" stopColor="#00ff66" stopOpacity="0"/>
+                          </linearGradient>
+                        </defs>
+                        <path d="M 0,110 L 80,95 L 160,80 L 260,60 L 340,35 L 400,10 L 400,120 L 0,120 Z" fill="url(#neonGrad)" />
+                        <path d="M 0,110 L 80,95 L 160,80 L 260,60 L 340,35 L 400,10" fill="none" stroke="#00ff66" strokeWidth="3" />
+                        <circle cx="400" cy="10" r="5" fill="#00ff66" />
+                      </svg>
                     </div>
-                    <div className="text-right text-[11px] font-mono text-neonGreen mt-2">+13.6% Annual Growth Performance</div>
+                    <div className="flex justify-between text-[11px] font-mono text-slate-500 pt-2 border-t border-slate-800">
+                      <span>1Y Ago</span>
+                      <span>6M Ago</span>
+                      <span>3M Ago</span>
+                      <span>1M Ago</span>
+                      <span className="text-neonGreen font-bold">Now (+13.6%)</span>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ==================== TAB: KOREA FINANCE (KRW) ==================== */}
+            {/* ==================== TAB: KOREA ==================== */}
             {activeTab === "korea" && (
               <div className="space-y-6">
-                {/* 1. PARKING ACCOUNTS & SUB-POTS */}
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -643,14 +596,13 @@
                           </div>
                         </div>
 
-                        {/* SUB-POTS (나눠모으기) */}
                         <div className="pl-4 border-l-2 border-slate-800 space-y-2 pt-2">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-slate-400 font-mono">Sub-Pots (나눠모으기):</span>
                             <button
                               onClick={() => {
-                                const potName = prompt("Sub-Pot Name (목표 이름):", "Study Budget");
-                                const potAmt = prompt("Allocate amount from Parking (이체할 금액):", "100000");
+                                const potName = prompt("Sub-Pot Name:", "Study Budget");
+                                const potAmt = prompt("Allocate amount from Parking (KRW):", "100000");
                                 if (potName && potAmt && !isNaN(potAmt)) {
                                   const amt = Number(potAmt);
                                   if (amt > p.balance) return alert("Exceeds current parking balance");
@@ -686,12 +638,11 @@
                   })}
                 </div>
 
-                {/* 2. TERM & INSTALLMENT SAVINGS */}
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Term Savings (예금 / 적금)</h2>
-                      <p className="text-[11px] text-slate-500 font-mono">Calculates accrued interest to date, with destination sweep on maturity</p>
+                      <p className="text-[11px] text-slate-500 font-mono">Accrued interest to date, with destination sweep on maturity</p>
                     </div>
                     <button
                       onClick={() => setKrSavings([...krSavings, {
@@ -719,11 +670,8 @@
                     const daysTotal = Math.max(1, (new Date(s.maturityDate) - new Date(s.startDate)) / (1000 * 3600 * 24));
                     const daysPassed = Math.min(daysTotal, Math.max(0, (new Date() - new Date(s.startDate)) / (1000 * 3600 * 24)));
                     
-                    // Accrued Interest to Date (Lãi tích lũy đến ngày hôm nay)
                     const accruedPreTax = s.currentPrincipal * (s.rate / 100) * (daysPassed / 365);
                     const accruedNet = accruedPreTax * (1 - (s.taxRate / 100));
-
-                    // At Maturity Expected (Sau thuế)
                     const totalPreTax = s.currentPrincipal * (s.rate / 100) * (daysTotal / 365);
                     const afterTaxExpected = s.currentPrincipal + (totalPreTax * (1 - (s.taxRate / 100)));
 
@@ -757,7 +705,7 @@
                                 <input type="number" step="0.1" value={editForm.rate} onChange={(e) => setEditForm({ ...editForm, rate: Number(e.target.value) })} className="w-14 px-1 py-1 rounded border" />
                                 <input type="number" step="0.1" value={editForm.taxRate} onChange={(e) => setEditForm({ ...editForm, taxRate: Number(e.target.value) })} className="w-14 px-1 py-1 rounded border" />
                               </div>
-                            ) : <span>{s.rate}% (Tax {s.taxRate}%)</span>}
+                            ) : <span>{s.rate}% ({s.taxRate}%)</span>}
                           </div>
                           <div>
                             <span className="text-slate-500 text-[10px] block">Maturity Date</span>
@@ -785,15 +733,14 @@
                           </div>
                         </div>
 
-                        {/* ACCRUED TO DATE & INTERACTIVE WITHDRAWAL SECTION */}
                         <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-800 text-xs">
                           <div className="flex items-center gap-6">
                             <div>
-                              <span className="text-slate-500">Accrued Interest to Date: </span>
+                              <span className="text-slate-500">Accrued to Date: </span>
                               <span className="text-neonYellow font-bold">+{fmt(accruedNet, "KRW")}</span>
                             </div>
                             <div>
-                              <span className="text-slate-500">At Maturity Expected: </span>
+                              <span className="text-slate-500">At Maturity Target: </span>
                               <span className="text-neonGreen font-bold">{fmt(afterTaxExpected, "KRW")}</span>
                             </div>
                             <div>
@@ -803,15 +750,14 @@
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {/* PARTIAL WITHDRAWAL (중도인출 - MAX 2 TIMES) */}
                             <button
                               disabled={(s.earlyWithdrawals || []).length >= 2}
                               onClick={() => {
-                                const wAmt = prompt("Enter Principal to withdraw early (KRW):", "1000000");
+                                const wAmt = prompt("Principal to withdraw early (KRW):", "1000000");
                                 if (!wAmt || isNaN(wAmt)) return;
                                 const numAmt = Number(wAmt);
                                 if (numAmt > s.currentPrincipal) return alert("Exceeds current principal");
-                                const earlyInt = prompt("Enter early interest received (KRW):", Math.round(numAmt * 0.01).toString());
+                                const earlyInt = prompt("Early interest received (KRW):", Math.round(numAmt * 0.01).toString());
                                 const updated = [...krSavings];
                                 if (!updated[sIdx].earlyWithdrawals) updated[sIdx].earlyWithdrawals = [];
                                 updated[sIdx].earlyWithdrawals.push({
@@ -828,14 +774,6 @@
                             </button>
                           </div>
                         </div>
-
-                        {(s.earlyWithdrawals || []).length > 0 && (
-                          <div className="text-[11px] bg-black/40 p-2 rounded text-slate-400">
-                            {s.earlyWithdrawals.map((w, wIdx) => (
-                              <div key={wIdx}>• {w.date}: Withdrew {fmt(w.principal, "KRW")} | Early Int: {fmt(w.interestPaid, "KRW")}</div>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     );
                   })}
@@ -843,13 +781,13 @@
               </div>
             )}
 
-            {/* ==================== TAB: VIETNAM FINANCE (VND) ==================== */}
+            {/* ==================== TAB: VIETNAM ==================== */}
             {activeTab === "vietnam" && (
               <div className="space-y-6">
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Vietnam Term & Goal Deposits</h2>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Vietnam Term Deposits</h2>
                       <p className="text-[11px] text-slate-500 font-mono">Monthly top-up from parking accounts, target synchronized to May 9th</p>
                     </div>
                     <button
@@ -935,15 +873,14 @@
                           </div>
                         </div>
 
-                        {/* ACCRUED VALUE & MONTHLY RECURRING TOP-UP ACTION */}
                         <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-800 text-xs">
                           <div className="flex items-center gap-6">
                             <div>
-                              <span className="text-slate-500">Accrued Interest to Date: </span>
+                              <span className="text-slate-500">Accrued Interest: </span>
                               <span className="text-neonYellow font-bold">+{fmt(accruedInterest, "VND")}</span>
                             </div>
                             <div>
-                              <span className="text-slate-500">Expected at Maturity: </span>
+                              <span className="text-slate-500">At Maturity Expected: </span>
                               <span className="text-neonGreen font-bold">{fmt(maturityTotal, "VND")}</span>
                             </div>
                             <div>
@@ -954,7 +891,7 @@
 
                           <button
                             onClick={() => {
-                              const topup = prompt("Monthly top-up amount from VN Parking account (VND):", "3500000");
+                              const topup = prompt("Top-up amount (VND):", "3500000");
                               if (topup && !isNaN(topup)) {
                                 const amt = Number(topup);
                                 const updated = [...vnSavings];
@@ -964,7 +901,7 @@
                             }}
                             className="px-2 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-xs"
                           >
-                            + Monthly Top-Up
+                            + Top-Up
                           </button>
                         </div>
                       </div>
@@ -980,23 +917,15 @@
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Vietnam Mutual Funds (CCQ)</h2>
-                      <p className="text-[11px] text-slate-500 font-mono">Automated Fmarket API proxy sync with editable fallback</p>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Mutual Funds (CCQ)</h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Vietnamese Open-Ended Mutual Funds</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={refreshNavData}
-                        className="text-xs px-2.5 py-1 bg-neonGreen/10 hover:bg-neonGreen/20 text-neonGreen border border-neonGreen/30 rounded font-mono"
-                      >
-                        ⚡ Live Fmarket Sync
-                      </button>
-                      <button
-                        onClick={() => setFunds([...funds, { id: "f_" + Date.now(), code: "DCDS", units: 10, buyNav: 15000, currentNav: 15000, history: [15000] }])}
-                        className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded font-mono"
-                      >
-                        + Add Fund
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => setFunds([...funds, { id: "f_" + Date.now(), code: "DCDS", units: 10, buyNav: 15000, currentNav: 15000, history: [15000] }])}
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded font-mono"
+                    >
+                      + Add Fund
+                    </button>
                   </div>
 
                   {funds.map((f, fIdx) => {
@@ -1016,7 +945,7 @@
                             ) : <span className="font-bold text-white text-sm">{f.code}</span>}
                           </div>
                           <div>
-                            <span className="text-slate-500 text-[10px] block">Units (CCQ)</span>
+                            <span className="text-slate-500 text-[10px] block">Units</span>
                             {isEditing ? (
                               <input type="number" step="0.01" value={editForm.units} onChange={(e) => setEditForm({ ...editForm, units: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonCyan" />
                             ) : <span className="text-neonCyan">{f.units}</span>}
@@ -1065,14 +994,14 @@
               </div>
             )}
 
-            {/* ==================== TAB: PROPERTY & PHYSICAL ASSETS ==================== */}
+            {/* ==================== TAB: PROPERTY ==================== */}
             {activeTab === "assets" && (
               <div className="space-y-6">
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Real Estate & Major Property</h2>
-                      <p className="text-[11px] text-slate-500 font-mono">Real estate and housing deposits with parking deduction tracking</p>
+                      <p className="text-[11px] text-slate-500 font-mono">Real estate and housing key money deposits</p>
                     </div>
                     <button
                       onClick={() => setProperties([...properties, {
@@ -1104,7 +1033,7 @@
                             ) : <span className="font-bold text-white">{p.name}</span>}
                           </div>
                           <div>
-                            <span className="text-slate-500 text-[10px] block">Address / Location</span>
+                            <span className="text-slate-500 text-[10px] block">Location</span>
                             {isEditing ? (
                               <input type="text" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} className="w-full px-2 py-1 rounded border" />
                             ) : <span className="text-slate-300">{p.address}</span>}
@@ -1123,7 +1052,7 @@
                             ) : <span className="font-bold text-neonYellow text-sm">{fmt(p.valuation, p.currency)}</span>}
                           </div>
                           <div>
-                            <span className="text-slate-500 text-[10px] block">Source Parking</span>
+                            <span className="text-slate-500 text-[10px] block">Funded Source</span>
                             {isEditing ? (
                               <select value={editForm.fundedFrom} onChange={(e) => setEditForm({ ...editForm, fundedFrom: e.target.value })} className="w-full px-2 py-1 rounded border text-xs">
                                 <option value="None">None</option>
@@ -1158,14 +1087,14 @@
               </div>
             )}
 
-            {/* ==================== TAB: CASHFLOW & TRANSACTIONS (6 JARS INTEGRATED) ==================== */}
+            {/* ==================== TAB: CASHFLOW (6 JARS) ==================== */}
             {activeTab === "cashflow" && (
               <div className="space-y-6">
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Cashflow Terminal (Chronological)</h2>
-                      <p className="text-[11px] text-slate-500 font-mono">Strict 6 Jars category classification dropdowns</p>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Cashflow Terminal</h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Strict 6 Jars category classification</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -1216,7 +1145,6 @@
                               <select value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })} className="w-full px-1.5 py-0.5 rounded border font-bold">
                                 <option value="Income">Income</option>
                                 <option value="Expense">Expense</option>
-                                <option value="Transfer">Transfer</option>
                               </select>
                             ) : <span className={c.type === "Income" ? "text-neonGreen font-bold" : "text-rose-400"}>{c.type}</span>}
                           </div>
@@ -1289,14 +1217,14 @@
               </div>
             )}
 
-            {/* ==================== TAB: DEBTS & LIABILITIES ==================== */}
+            {/* ==================== TAB: DEBTS ==================== */}
             {activeTab === "debt" && (
               <div className="space-y-6">
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-sm font-bold tracking-wider text-rose-400 uppercase font-mono">Liabilities & Held Security Deposits</h2>
-                      <p className="text-[11px] text-slate-500 font-mono">Deducts directly from Net Worth to maintain true balance sheet integrity</p>
+                      <p className="text-[11px] text-slate-500 font-mono">Deducts directly from Net Worth</p>
                     </div>
                     <button
                       onClick={() => setDebts([...debts, { id: "d_" + Date.now(), name: "Tenant Deposit", amount: 10000000, currency: "VND", party: "Tenant", dueDate: "2027-05-09", note: "" }])}
@@ -1366,125 +1294,31 @@
               </div>
             )}
 
-            {/* ==================== TAB: 6 JARS & ADVANCED ANALYSIS ==================== */}
+            {/* ==================== TAB: ANALYSIS (6 JARS) ==================== */}
             {activeTab === "analytics" && (
               <div className="space-y-6">
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">6 Jars System Financial Analysis</h2>
-                      <p className="text-[11px] text-slate-500 font-mono">Actual expenditure compared against target jar ratios</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={jars.map(j => {
-                          const spent = cashflow.filter(c => c.jarId === j.id && c.type === "Expense").reduce((sum, c) => sum + toVND(c.amount, c.currency), 0);
-                          return { name: j.id, Target: j.pct, Spent: Math.round(spent / 1e5) };
-                        })}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                          <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'JetBrains Mono' }} />
-                          <YAxis stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'JetBrains Mono' }} />
-                          <Tooltip contentStyle={{ backgroundColor: "#0b0f19", borderColor: "#1e293b", fontFamily: "JetBrains Mono" }} />
-                          <Bar dataKey="Target" fill="#00f0ff" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="Spent" fill="#ff007f" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    <div className="space-y-2 text-xs font-mono">
-                      {jars.map(j => {
-                        const spent = cashflow.filter(c => c.jarId === j.id && c.type === "Expense").reduce((sum, c) => sum + toVND(c.amount, c.currency), 0);
-                        return (
-                          <div key={j.id} className="p-3 bg-cyberDark/60 rounded border border-slate-800 flex items-center justify-between">
-                            <div>
-                              <span className="font-bold text-white block">{lang === "en" ? j.nameEn : j.nameKo}</span>
-                              <span className="text-[10px] text-slate-500">{j.categories.length} Categories Registered</span>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-neonPink font-bold block">{fmt(spent, "VND")}</span>
-                              <span className="text-slate-400 text-[10px]">Target: {j.pct}% of Inflow</span>
-                            </div>
+                  <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">6 Jars System Performance</h2>
+                  <div className="space-y-3 font-mono text-xs">
+                    {jars.map(j => {
+                      const spent = cashflow.filter(c => c.jarId === j.id && c.type === "Expense").reduce((sum, c) => sum + toVND(c.amount, c.currency), 0);
+                      return (
+                        <div key={j.id} className="p-3 bg-cyberDark/60 rounded border border-slate-800 flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-white block">{lang === "en" ? j.nameEn : j.nameKo}</span>
+                            <span className="text-[10px] text-slate-500">{j.categories.length} Categories</span>
                           </div>
-                        );
-                      })}
-                    </div>
+                          <div className="text-right">
+                            <span className="text-neonPink font-bold block">{fmt(spent, "VND")}</span>
+                            <span className="text-slate-400 text-[10px]">Target: {j.pct}%</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             )}
-
-            {/* ==================== 6 JARS CONFIGURATION MODAL ==================== */}
-            {showJarModal && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl max-w-2xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto font-mono text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <h2 className="text-sm font-bold text-neonCyan uppercase">Configure 6 Jars & Categories</h2>
-                    <button onClick={() => setShowJarModal(false)} className="text-slate-400 hover:text-white">✕</button>
-                  </div>
-
-                  <div className="space-y-4">
-                    {jars.map((j, jIdx) => (
-                      <div key={j.id} className="p-3 bg-cyberDark rounded border border-slate-800 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-white">{lang === "en" ? j.nameEn : j.nameKo}</span>
-                          <div className="flex items-center gap-2">
-                            <span>Target %:</span>
-                            <input
-                              type="number"
-                              value={j.pct}
-                              onChange={(e) => {
-                                const updated = [...jars];
-                                updated[jIdx].pct = Number(e.target.value);
-                                setJars(updated);
-                              }}
-                              className="w-16 px-1.5 py-0.5 rounded border text-neonCyan font-bold text-center"
-                            />
-                          </div>
-                        </div>
-
-                        {/* CATEGORY TAGS */}
-                        <div className="flex flex-wrap gap-1.5 pt-2">
-                          {j.categories.map((c, cIdx) => (
-                            <span key={c.id} className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-300 flex items-center gap-1.5 text-[11px]">
-                              {lang === "en" ? c.en : c.ko}
-                              <button onClick={() => {
-                                const updated = [...jars];
-                                updated[jIdx].categories = updated[jIdx].categories.filter((_, i) => i !== cIdx);
-                                setJars(updated);
-                              }} className="text-slate-500 hover:text-rose-400">✕</button>
-                            </span>
-                          ))}
-                          <button
-                            onClick={() => {
-                              const nameEn = prompt("Category English name:", "New Category");
-                              const nameKo = prompt("Category Korean name:", "새 카테고리");
-                              if (nameEn && nameKo) {
-                                const updated = [...jars];
-                                updated[jIdx].categories.push({ id: "cat_" + Date.now(), en: nameEn, ko: nameKo });
-                                setJars(updated);
-                              }
-                            }}
-                            className="text-cyan-400 hover:underline px-2 py-0.5"
-                          >
-                            + Add Category
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-800 text-right">
-                    <button onClick={() => setShowJarModal(false)} className="px-4 py-2 bg-neonGreen text-black font-bold rounded">
-                      Close & Apply
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
           </main>
         </div>
       );
