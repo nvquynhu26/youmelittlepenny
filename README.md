@@ -1,4 +1,4 @@
-# Youmelittlepenny — Personal Wealth Terminal
+# Youmelittlepenny
 
 A high-density, real-time personal wealth management terminal designed for dual-market finance (South Korea KRW & Vietnam VND).
 
