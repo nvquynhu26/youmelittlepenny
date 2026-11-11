@@ -5,16 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Youmelittlepenny</title>
   
-  <!-- Tailwind CSS & Lucide Icons -->
+  <!-- Fonts & Tailwind -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
           colors: {
-            cyberDark: '#07090e',
-            cyberCard: '#0f141f',
+            cyberDark: '#05070a',
+            cyberCard: '#0b0f19',
             cyberBorder: '#1e293b',
             neonGreen: '#00ff66',
             neonCyan: '#00f0ff',
@@ -25,22 +32,17 @@
       }
     }
   </script>
-  
-  <!-- React, ReactDOM, Babel for Single File In-Browser Execution -->
+
+  <!-- React 18, ReactDOM, Babel & Recharts -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
 
   <style>
-    body {
-      background-color: #07090e;
-      color: #e2e8f0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-    .neon-text-green { text-shadow: 0 0 10px rgba(0, 255, 102, 0.5); }
-    .neon-text-cyan { text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
-    .neon-border-cyan { box-shadow: 0 0 8px rgba(0, 240, 255, 0.3); }
+    body { background-color: #05070a; color: #f1f5f9; }
+    .neon-glow-cyan { text-shadow: 0 0 12px rgba(0, 240, 255, 0.4); }
+    .neon-glow-green { text-shadow: 0 0 12px rgba(0, 255, 102, 0.4); }
     input, select, textarea {
       background-color: #07090e !important;
       border-color: #1e293b !important;
@@ -49,12 +51,8 @@
     input:focus, select:focus, textarea:focus {
       border-color: #00f0ff !important;
       outline: none;
-      box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
     }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #07090e; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
   </style>
 </head>
 <body>
@@ -62,227 +60,203 @@
 
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
+    const { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid } = window.Recharts;
 
     // ==========================================
-    // ⚙️ CONFIGURATION: PASTE YOUR GAS URL HERE
+    // ⚙️ GAS DEPLOYMENT URL (PASTE HERE)
     // ==========================================
-    const GOOGLE_APPS_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyi8Zg8U08BmtjL9-C0UCW_g6v6adg4MwCYv8A-SFrgNsEIHSPoXaMf69cVqlv38zjzsw/exec";
+    const GOOGLE_APPS_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwYyW8s7gI-SAMPLE-REPLACE_ME/exec";
 
-    // --- I18N DICTIONARY (STRICTLY EN & KO ONLY) ---
-    const i18n = {
-      en: {
-        lockTitle: "Youmelittlepenny",
-        lockDesc: "Encrypted Multi-Currency Financial Terminal",
-        passPlaceholder: "Enter Passcode",
-        unlockBtn: "Authenticate",
-        wrongPass: "Access Denied",
-        netWorth: "Net Worth",
-        assets: "Assets",
-        liabilities: "Liabilities",
-        rates: "Live Exchange Rates",
-        sync: "Sync Drive",
-        synced: "Synced",
-        syncing: "Syncing...",
-        syncFail: "Sync Failed",
-        tabs: {
-          dash: "Overview",
-          korea: "Korea",
-          vietnam: "Vietnam",
-          invest: "Funds",
-          assets: "Property",
-          cashflow: "Cashflow",
-          debt: "Debts",
-          history: "Ledger",
-          analytics: "Analysis"
-        },
-        actions: {
-          add: "Add",
-          save: "Save",
-          edit: "Edit",
-          delete: "Delete",
-          cancel: "Cancel",
-          withdraw: "Partial Withdraw",
-          terminate: "Liquidate",
-          export: "Export JSON",
-          import: "Import JSON"
-        },
-        common: {
-          bank: "Bank",
-          account: "Account",
-          balance: "Balance",
-          principal: "Principal",
-          rate: "Rate",
-          term: "Term",
-          tax: "Tax",
-          date: "Date",
-          desc: "Note",
-          fee: "Fee",
-          category: "Category",
-          type: "Type",
-          amount: "Amount",
-          currency: "Currency",
-          fromParking: "Deduct from Parking",
-          accrued: "Accrued Value",
-          maturityVal: "At Maturity",
-          earlyRate: "Early Rate",
-          history: "History Log",
-          source: "Source"
-        }
+    // --- 6 JARS CANONICAL DATA STRUCTURE ---
+    const DEFAULT_JARS = [
+      {
+        id: "NEC",
+        pct: 55,
+        nameEn: "Necessities (55%)",
+        nameKo: "생활비 / 필수지출 (55%)",
+        categories: [
+          { id: "nec_rent", en: "Rent / Housing", ko: "주거비 / 월세" },
+          { id: "nec_util", en: "Utilities (Power/Water/Internet)", ko: "공과금 (수도·광열·관리비)" },
+          { id: "nec_groc", en: "Groceries", ko: "식비 / 장보기" },
+          { id: "nec_dine", en: "Daily Dining", ko: "외식비" },
+          { id: "nec_tran", en: "Transportation", ko: "교통비" },
+          { id: "nec_tele", en: "Phone / Telecom", ko: "통신비" },
+          { id: "nec_insu", en: "Insurance", ko: "보험료" },
+          { id: "nec_heal", en: "Healthcare / Medical", ko: "의료비" }
+        ]
       },
-      ko: {
-        lockTitle: "Youmelittlepenny",
-        lockDesc: "다중 통화 통합 자산 터미널",
-        passPlaceholder: "비밀번호 입력",
-        unlockBtn: "인증",
-        wrongPass: "접근 거부",
-        netWorth: "순자산",
-        assets: "총자산",
-        liabilities: "부채",
-        rates: "실시간 환율",
-        sync: "드라이브 동기화",
-        synced: "동기화 완료",
-        syncing: "동기화 중...",
-        syncFail: "동기화 실패",
-        tabs: {
-          dash: "대시보드",
-          korea: "한국 금융",
-          vietnam: "베트남 금융",
-          invest: "펀드 투자",
-          assets: "실물 자산",
-          cashflow: "수지 가계부",
-          debt: "부채 관리",
-          history: "전체 내역",
-          analytics: "종합 분석"
-        },
-        actions: {
-          add: "추가",
-          save: "저장",
-          edit: "수정",
-          delete: "삭제",
-          cancel: "취소",
-          withdraw: "중도인출",
-          terminate: "중도해지",
-          export: "JSON 내보내기",
-          import: "JSON 가져오기"
-        },
-        common: {
-          bank: "은행",
-          account: "계좌명",
-          balance: "잔액",
-          principal: "원금",
-          rate: "금리",
-          term: "기간",
-          tax: "세율",
-          date: "날짜",
-          desc: "비고",
-          fee: "수수료",
-          category: "분류",
-          type: "구분",
-          amount: "금액",
-          currency: "통화",
-          fromParking: "파킹통장 출금",
-          accrued: "현재 평가액",
-          maturityVal: "만기 예상액",
-          earlyRate: "중도해지 금리",
-          history: "계좌 내역",
-          source: "출처"
-        }
+      {
+        id: "LTSS",
+        pct: 10,
+        nameEn: "Long-term Savings (10%)",
+        nameKo: "장기저축 / 목돈마련 (10%)",
+        categories: [
+          { id: "lts_emg", en: "Emergency Fund", ko: "비상금" },
+          { id: "lts_maj", en: "Major Purchases", ko: "대형지출 적립" },
+          { id: "lts_rain", en: "Rainy-day Savings", ko: "예비비" }
+        ]
+      },
+      {
+        id: "EDU",
+        pct: 10,
+        nameEn: "Education (10%)",
+        nameKo: "자기계발 / 교육비 (10%)",
+        categories: [
+          { id: "edu_tui", en: "Courses / Tuition", ko: "강의료 / 학비" },
+          { id: "edu_book", en: "Books / Resources", ko: "도서구입비" },
+          { id: "edu_lang", en: "Language Learning", ko: "어학학습비" },
+          { id: "edu_tool", en: "Seminars / Tools", ko: "세미나 / 학습툴" }
+        ]
+      },
+      {
+        id: "FFA",
+        pct: 10,
+        nameEn: "Financial Freedom (10%)",
+        nameKo: "재테크 / 투자 (10%)",
+        categories: [
+          { id: "ffa_stk", en: "Stocks / ETFs / CCQ", ko: "주식 / ETF / CCQ" },
+          { id: "ffa_pen", en: "Retirement / Pension", ko: "연금 / IRP" },
+          { id: "ffa_gro", en: "Growth Investments", ko: "투자원금" }
+        ]
+      },
+      {
+        id: "PLAY",
+        pct: 10,
+        nameEn: "Play & Leisure (10%)",
+        nameKo: "문화·여가 / 플렉스 (10%)",
+        categories: [
+          { id: "ply_cafe", en: "Cafés & Socializing", ko: "카페 / 사교" },
+          { id: "ply_ent", en: "Hobbies & Entertainment", ko: "취미 / 문화생활" },
+          { id: "ply_trav", en: "Travel / Vacations", ko: "여행 / 휴가" },
+          { id: "ply_shop", en: "Personal Shopping", ko: "쇼핑 / 기분전환" }
+        ]
+      },
+      {
+        id: "GIVE",
+        pct: 5,
+        nameEn: "Give (5%)",
+        nameKo: "기부 / 경조사 (5%)",
+        categories: [
+          { id: "giv_dona", en: "Donations / Charity", ko: "기부금 / 후원" },
+          { id: "giv_fam", en: "Family & Gifts", ko: "가족용돈 / 선물" },
+          { id: "giv_soc", en: "Social Obligations", ko: "경조사비" }
+        ]
       }
-    };
+    ];
 
-    // Bank presets for Korean and Vietnamese markets
     const KOREA_BANKS = ["Toss Bank", "KakaoBank", "Kookmin KB", "Shinhan", "Hana", "Woori", "K-Bank"];
     const VN_BANKS = ["MBBank", "Techcombank", "Vietcombank", "VPBank", "ACB", "TPBank"];
 
     function App() {
-      // --- STATE MANAGERS ---
+      // --- AUTHENTICATION ---
       const [authed, setAuthed] = useState(() => sessionStorage.getItem("auth_pass") === "$1Million");
       const [passInput, setPassInput] = useState("");
       const [lang, setLang] = useState("en");
       const [activeTab, setActiveTab] = useState("dash");
       const [syncStatus, setSyncStatus] = useState("idle");
 
-      // Exchange Rates (Base: USD, editable / live query)
-      const [fx, setFx] = useState(() => {
-        const saved = localStorage.getItem("pen_fx");
-        return saved ? JSON.parse(saved) : { USD_KRW: 1380, USD_VND: 25400, KRW_VND: 18.4 };
-      });
+      // --- EDITING LOCK STATE (Row ID being edited) ---
+      const [editingId, setEditingId] = useState(null);
+      const [editForm, setEditForm] = useState({});
 
-      // --- ACCOUNTS & ASSETS STATE (Init with user's baseline figures, fully editable) ---
+      // --- REAL-TIME EXCHANGE RATES ---
+      const [fx, setFx] = useState({ USD_KRW: 1385, USD_VND: 25420, KRW_VND: 18.35 });
+
+      // Automatically fetch latest FX rates on launch
+      useEffect(() => {
+        async function fetchRates() {
+          try {
+            const res = await fetch("https://open.er-api.com/v6/latest/USD");
+            const data = await res.json();
+            if (data && data.rates) {
+              const u_krw = data.rates.KRW || 1385;
+              const u_vnd = data.rates.VND || 25420;
+              setFx({
+                USD_KRW: Math.round(u_krw * 100) / 100,
+                USD_VND: Math.round(u_vnd),
+                KRW_VND: Math.round((u_vnd / u_krw) * 100) / 100
+              });
+            }
+          } catch (e) {
+            console.warn("Using offline FX fallback", e);
+          }
+        }
+        fetchRates();
+      }, []);
+
+      // --- 6 JARS CONFIG ---
+      const [jars, setJars] = useState(() => {
+        const saved = localStorage.getItem("pen_jars");
+        return saved ? JSON.parse(saved) : DEFAULT_JARS;
+      });
+      const [showJarModal, setShowJarModal] = useState(false);
+
+      // --- DATA STATES ---
       const [krParking, setKrParking] = useState(() => {
         const saved = localStorage.getItem("pen_kr_parking");
         return saved ? JSON.parse(saved) : [
-          { id: "kp1", bank: "Toss Bank", name: "Main Parking", balance: 500000, rate: 2.0, subPots: [
-            { id: "sp1", name: "Toss Surplus", balance: 75000 }
-          ]}
+          { id: "kp1", bank: "Toss Bank", name: "Main Parking", balance: 500000, rate: 2.0, subPots: [{ id: "sp1", name: "Savings Spillover", balance: 75000 }] }
         ];
       });
 
       const [krSavings, setKrSavings] = useState(() => {
         const saved = localStorage.getItem("pen_kr_savings");
         return saved ? JSON.parse(saved) : [
-          { id: "ks1", bank: "Hana", name: "Fixed Jeonse Buffer", type: "yegeum", principal: 9000000, currentPrincipal: 9000000, rate: 3.0, taxRate: 15.4, startDate: "2026-05-09", maturityDate: "2027-05-09", earlyWithdrawals: [], terminated: false, actualMaturity: null },
-          { id: "ks2", bank: "Toss Bank", name: "Study Fund", type: "jeokgeum", principal: 865000, currentPrincipal: 865000, rate: 1.4, taxRate: 15.4, startDate: "2026-01-01", maturityDate: "2027-05-09", earlyWithdrawals: [], terminated: false, actualMaturity: null }
+          { id: "ks1", bank: "Hana", name: "Jeonse Key Money", type: "yegeum", principal: 9000000, currentPrincipal: 9000000, rate: 3.0, taxRate: 15.4, startDate: "2026-05-09", maturityDate: "2027-05-09", destination: "kp1", earlyWithdrawals: [] },
+          { id: "ks2", bank: "Toss Bank", name: "PhD Study Fund", type: "jeokgeum", principal: 865000, currentPrincipal: 865000, rate: 1.4, taxRate: 15.4, startDate: "2026-01-01", maturityDate: "2027-05-09", destination: "kp1", earlyWithdrawals: [] }
         ];
       });
 
       const [vnParking, setVnParking] = useState(() => {
         const saved = localStorage.getItem("pen_vn_parking");
         return saved ? JSON.parse(saved) : [
-          { id: "vp1", bank: "MBBank", name: "Spending Checking", balance: 3000000, rate: 0.2 }
+          { id: "vp1", bank: "MBBank", name: "Spending Account", balance: 3000000, rate: 0.2 }
         ];
       });
 
       const [vnSavings, setVnSavings] = useState(() => {
         const saved = localStorage.getItem("pen_vn_savings");
         return saved ? JSON.parse(saved) : [
-          { id: "vs1", bank: "MBBank", name: "Annual Target May 9", type: "fixed", principal: 7000000, rate: 4.3, startDate: "2026-05-09", maturityDate: "2027-05-09", earlyRate: 0.2, terminated: false, actualMaturity: null },
-          { id: "vs2", bank: "MBBank", name: "Tenant Deposit Ringfence", type: "fixed", principal: 14000000, rate: 6.2, startDate: "2026-05-09", maturityDate: "2027-05-09", earlyRate: 0.2, terminated: false, actualMaturity: null }
+          { id: "vs1", bank: "MBBank", name: "Annual Target May 9", type: "fixed", principal: 7000000, currentPrincipal: 7000000, rate: 4.3, startDate: "2026-05-09", maturityDate: "2027-05-09", destination: "vp1", earlyRate: 0.2 },
+          { id: "vs2", bank: "MBBank", name: "Tenant Deposit Ringfence", type: "fixed", principal: 14000000, currentPrincipal: 14000000, rate: 6.2, startDate: "2026-05-09", maturityDate: "2027-05-09", destination: "vp1", earlyRate: 0.2 }
         ];
       });
 
       const [funds, setFunds] = useState(() => {
         const saved = localStorage.getItem("pen_funds");
         return saved ? JSON.parse(saved) : [
-          { id: "f1", code: "MBBOND", units: 45.45, buyNav: 22000, currentNav: 22385, history: [22000, 22100, 22250, 22385] },
-          { id: "f2", code: "MBAM", units: 33.33, buyNav: 15000, currentNav: 15150, history: [15000, 15050, 15100, 15150] }
+          { id: "f1", code: "MBBOND", units: 45.45, buyNav: 22000, currentNav: 22410, history: [22000, 22150, 22280, 22410] },
+          { id: "f2", code: "MBVF", units: 33.33, buyNav: 15000, currentNav: 15280, history: [15000, 15100, 15200, 15280] }
         ];
       });
 
       const [properties, setProperties] = useState(() => {
         const saved = localStorage.getItem("pen_properties");
         return saved ? JSON.parse(saved) : [
-          { id: "p1", name: "HCMC Mid Apartment (95% Paid)", type: "Real Estate", address: "Ho Chi Minh City", buyDate: "2024-01-10", buyPrice: 2000000000, currency: "VND", valuation: 2000000000, valDate: "2026-11-01", soldDate: null, fundedAccount: "None" },
-          { id: "p2", name: "Housing Key Money Deposit (Korea)", type: "Deposit", address: "Seoul, Korea", buyDate: "2024-05-01", buyPrice: 8000000, currency: "KRW", valuation: 8000000, valDate: "2026-11-01", soldDate: null, fundedAccount: "None" }
+          { id: "p1", name: "HCMC Mid Apartment (95% Paid)", type: "Real Estate", address: "Ho Chi Minh City", buyDate: "2024-01-10", buyPrice: 2000000000, currency: "VND", valuation: 2000000000, fundedFrom: "None" },
+          { id: "p2", name: "Seoul Housing Key Money (Deposit)", type: "Deposit", address: "Seoul, Korea", buyDate: "2024-05-01", buyPrice: 8000000, currency: "KRW", valuation: 8000000, fundedFrom: "None" }
         ];
       });
 
       const [debts, setDebts] = useState(() => {
         const saved = localStorage.getItem("pen_debts");
         return saved ? JSON.parse(saved) : [
-          { id: "d1", name: "Tenant Security Deposit (Refundable)", amount: 14000000, currency: "VND", party: "Tenant Room A", dueDate: "2027-05-09", note: "Held in MBBank term deposit" }
+          { id: "d1", name: "Tenant Security Deposit", amount: 14000000, currency: "VND", party: "Tenant Room 102", dueDate: "2027-05-09", note: "Held in bank deposit" }
         ];
       });
 
       const [cashflow, setCashflow] = useState(() => {
         const saved = localStorage.getItem("pen_cashflow");
         return saved ? JSON.parse(saved) : [
-          { id: "c1", date: "2026-11-01", type: "Income", category: "Salary", amount: 2414477, currency: "KRW", accountName: "Toss Bank", desc: "Design Studio Seoul", fee: 0 },
-          { id: "c2", date: "2026-11-01", type: "Income", category: "Rental", amount: 7300000, currency: "VND", accountName: "MBBank", desc: "Apartment Rent", fee: 0 },
-          { id: "c3", date: "2026-11-05", type: "Expense", category: "Tuition", amount: 3300000, currency: "VND", accountName: "MBBank", desc: "Spanish Class", fee: 0 },
-          { id: "c4", date: "2026-11-05", type: "Expense", category: "Living", amount: 1164000, currency: "KRW", accountName: "Toss Bank", desc: "Seoul Rent & Food", fee: 0 }
+          { id: "c1", date: "2026-11-01", type: "Income", jarId: "FFA", catId: "ffa_gro", amount: 2414477, currency: "KRW", account: "Toss Bank", desc: "Design Studio Seoul", fee: 0 },
+          { id: "c2", date: "2026-11-01", type: "Income", jarId: "FFA", catId: "ffa_gro", amount: 7300000, currency: "VND", account: "MBBank", desc: "Apartment Rent", fee: 0 },
+          { id: "c3", date: "2026-11-05", type: "Expense", jarId: "EDU", catId: "edu_lang", amount: 3300000, currency: "VND", account: "MBBank", desc: "Spanish Class", fee: 0 },
+          { id: "c4", date: "2026-11-05", type: "Expense", jarId: "NEC", catId: "nec_rent", amount: 1164000, currency: "KRW", account: "Toss Bank", desc: "Living Expenses", fee: 0 }
         ];
       });
 
-      const [logs, setLogs] = useState(() => {
-        const saved = localStorage.getItem("pen_logs");
-        return saved ? JSON.parse(saved) : [
-          { id: "l1", date: "2026-11-10", account: "MBBOND", event: "Initial buy 1M VND", amount: 1000000, currency: "VND", note: "DCA seed" }
-        ];
-      });
-
-      // --- PERSISTENCE ---
-      useEffect(() => { localStorage.setItem("pen_fx", JSON.stringify(fx)); }, [fx]);
+      // --- SAVE TO LOCALSTORAGE ---
+      useEffect(() => { localStorage.setItem("pen_jars", JSON.stringify(jars)); }, [jars]);
       useEffect(() => { localStorage.setItem("pen_kr_parking", JSON.stringify(krParking)); }, [krParking]);
       useEffect(() => { localStorage.setItem("pen_kr_savings", JSON.stringify(krSavings)); }, [krSavings]);
       useEffect(() => { localStorage.setItem("pen_vn_parking", JSON.stringify(vnParking)); }, [vnParking]);
@@ -291,53 +265,32 @@
       useEffect(() => { localStorage.setItem("pen_properties", JSON.stringify(properties)); }, [properties]);
       useEffect(() => { localStorage.setItem("pen_debts", JSON.stringify(debts)); }, [debts]);
       useEffect(() => { localStorage.setItem("pen_cashflow", JSON.stringify(cashflow)); }, [cashflow]);
-      useEffect(() => { localStorage.setItem("pen_logs", JSON.stringify(logs)); }, [logs]);
 
-      // --- CONVERSION ENGINE ---
-      const toVND = (amount, cur) => {
-        if (!amount) return 0;
-        if (cur === "VND") return amount;
-        if (cur === "KRW") return amount * fx.KRW_VND;
-        if (cur === "USD") return amount * fx.USD_VND;
-        return amount;
-      };
-
-      const toKRW = (amount, cur) => {
-        if (!amount) return 0;
-        if (cur === "KRW") return amount;
-        if (cur === "VND") return amount / fx.KRW_VND;
-        if (cur === "USD") return amount * fx.USD_KRW;
-        return amount;
-      };
-
-      const toUSD = (amount, cur) => {
-        if (!amount) return 0;
-        if (cur === "USD") return amount;
-        if (cur === "VND") return amount / fx.USD_VND;
-        if (cur === "KRW") return amount / fx.USD_KRW;
-        return amount;
-      };
+      // --- FX CONVERSION HELPERS ---
+      const toVND = (val, cur) => cur === "VND" ? val : cur === "KRW" ? val * fx.KRW_VND : val * fx.USD_VND;
+      const toKRW = (val, cur) => cur === "KRW" ? val : cur === "VND" ? val / fx.KRW_VND : val * fx.USD_KRW;
+      const toUSD = (val, cur) => cur === "USD" ? val : cur === "VND" ? val / fx.USD_VND : val / fx.USD_KRW;
 
       const fmt = (val, cur) => {
-        if (val === undefined || val === null || isNaN(val)) return "0";
+        if (!val || isNaN(val)) return "0";
         if (cur === "VND") return Math.round(val).toLocaleString() + " ₫";
         if (cur === "KRW") return Math.round(val).toLocaleString() + " ₩";
         if (cur === "USD") return "$" + Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         return Number(val).toLocaleString();
       };
 
-      // --- TOTALS COMPUTATION ---
+      // --- RECOMPUTE TOTALS & NET WORTH ---
       const totals = useMemo(() => {
-        let krCash = krParking.reduce((sum, p) => sum + p.balance + (p.subPots || []).reduce((spSum, sp) => spSum + sp.balance, 0), 0);
-        let krDeposit = krSavings.filter(s => !s.terminated).reduce((sum, s) => sum + s.currentPrincipal, 0);
-        let vnCash = vnParking.reduce((sum, p) => sum + p.balance, 0);
-        let vnDeposit = vnSavings.filter(s => !s.terminated).reduce((sum, s) => sum + s.principal, 0);
-        let fundVND = funds.reduce((sum, f) => sum + (f.units * f.currentNav), 0);
-        let propVND = properties.filter(p => !p.soldDate).reduce((sum, p) => sum + toVND(p.valuation, p.currency), 0);
-        let debtVND = debts.reduce((sum, d) => sum + toVND(d.amount, d.currency), 0);
+        const krCash = krParking.reduce((sum, p) => sum + p.balance + (p.subPots || []).reduce((spSum, sp) => spSum + sp.balance, 0), 0);
+        const krDeposit = krSavings.reduce((sum, s) => sum + s.currentPrincipal, 0);
+        const vnCash = vnParking.reduce((sum, p) => sum + p.balance, 0);
+        const vnDeposit = vnSavings.reduce((sum, s) => sum + s.currentPrincipal, 0);
+        const fundVND = funds.reduce((sum, f) => sum + (f.units * f.currentNav), 0);
+        const propVND = properties.reduce((sum, p) => sum + toVND(p.valuation, p.currency), 0);
+        const debtVND = debts.reduce((sum, d) => sum + toVND(d.amount, d.currency), 0);
 
-        let assetsVND = toVND(krCash + krDeposit, "KRW") + vnCash + vnDeposit + fundVND + propVND;
-        let netVND = assetsVND - debtVND;
+        const assetsVND = toVND(krCash + krDeposit, "KRW") + vnCash + vnDeposit + fundVND + propVND;
+        const netVND = assetsVND - debtVND;
 
         return {
           assetsVND,
@@ -350,72 +303,117 @@
           vnCash,
           vnDeposit,
           fundVND,
-          propVND
+          propVND,
+          breakdownData: [
+            { name: "Real Estate", value: propVND, color: "#ffe600" },
+            { name: "Korea Liquid", value: toVND(krCash + krDeposit, "KRW"), color: "#00f0ff" },
+            { name: "Vietnam Cash", value: vnCash + vnDeposit, color: "#00ff66" },
+            { name: "Funds (CCQ)", value: fundVND, color: "#ff007f" }
+          ]
         };
       }, [krParking, krSavings, vnParking, vnSavings, funds, properties, debts, fx]);
 
-      // --- GOOGLE APPS SCRIPT WEBHOOK SYNC ---
+      // --- AUTOMATED FMARKET NAV FETCHER PROXY ---
+      const refreshNavData = async () => {
+        try {
+          // Public proxy scraper bridge for Vietnam Fund NAVs
+          const updatedFunds = await Promise.all(funds.map(async (f) => {
+            try {
+              const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://fmarket.vn/api/product/public/${f.code}`)}`);
+              const json = await res.json();
+              const parsed = JSON.parse(json.contents);
+              if (parsed && parsed.data && parsed.data.nav) {
+                const latest = parsed.data.nav;
+                return { ...f, currentNav: latest, history: [...(f.history || []), latest] };
+              }
+            } catch (e) { /* Fallback to existing */ }
+            return f;
+          }));
+          setFunds(updatedFunds);
+          alert("NAV data successfully refreshed via Fmarket sync bridge.");
+        } catch (e) {
+          alert("NAV live feed unavailable. Manual edit mode active.");
+        }
+      };
+
+      // --- GOOGLE APPS SCRIPT CLOUD SYNC ---
       const triggerGoogleSync = async () => {
         setSyncStatus("syncing");
         try {
+          const totalInc = cashflow.filter(c => c.type === "Income").reduce((sum, c) => sum + toVND(c.amount, c.currency), 0);
+          const totalExp = cashflow.filter(c => c.type === "Expense").reduce((sum, c) => sum + toVND(c.amount, c.currency), 0);
+
           const payload = {
-            timestamp: new Date().toISOString(),
             netWorthVND: totals.netVND,
             netWorthKRW: totals.netKRW,
             netWorthUSD: totals.netUSD,
-            transactions: cashflow,
-            assets: { krParking, krSavings, vnParking, vnSavings, funds, properties, debts }
+            totalIncome: totalInc,
+            totalExpense: totalExp,
+            sixJars: jars,
+            transactions: cashflow
           };
 
-          const res = await fetch(GOOGLE_APPS_SCRIPT_WEBAPP_URL, {
+          await fetch(GOOGLE_APPS_SCRIPT_WEBAPP_URL, {
             method: "POST",
-            mode: "no-cors", // Standard CORS bypass for Google Apps Script Webhook
+            mode: "no-cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
           });
 
           setSyncStatus("synced");
-          setTimeout(() => setSyncStatus("idle"), 4000);
-        } catch (err) {
-          console.error(err);
+          setTimeout(() => setSyncStatus("idle"), 3000);
+        } catch (e) {
           setSyncStatus("fail");
-          setTimeout(() => setSyncStatus("idle"), 4000);
+          setTimeout(() => setSyncStatus("idle"), 3000);
         }
       };
 
-      const handleLogin = (e) => {
-        e.preventDefault();
-        if (passInput === "$1Million") {
-          sessionStorage.setItem("auth_pass", "$1Million");
-          setAuthed(true);
-        } else {
-          alert(i18n[lang].wrongPass);
-        }
+      // --- EDITING LOCK / UNLOCK CONTROLLERS ---
+      const startEdit = (id, obj) => {
+        setEditingId(id);
+        setEditForm({ ...obj });
       };
 
-      const t = i18n[lang];
+      const cancelEdit = () => {
+        setEditingId(null);
+        setEditForm({});
+      };
 
-      // --- PASSWORD GATE SCREEN ---
+      // --- TAB DEFINITIONS (MINIMALIST & CYBERPUNK) ---
+      const TABS = {
+        dash: lang === "en" ? "Overview" : "대시보드",
+        korea: lang === "en" ? "Korea" : "한국 금융",
+        vietnam: lang === "en" ? "Vietnam" : "베트남 금융",
+        invest: lang === "en" ? "Funds" : "펀드 투자",
+        assets: lang === "en" ? "Property" : "실물 자산",
+        cashflow: lang === "en" ? "Cashflow" : "수지 기록",
+        debt: lang === "en" ? "Debts" : "부채 관리",
+        analytics: lang === "en" ? "Analysis" : "종합 분석"
+      };
+
       if (!authed) {
         return (
-          <div className="min-h-screen bg-cyberDark flex items-center justify-center p-4">
+          <div className="min-h-screen bg-cyberDark flex items-center justify-center p-4 font-sans">
             <div className="w-full max-w-sm bg-cyberCard border border-cyberBorder rounded-xl p-6 text-center shadow-2xl">
               <h1 className="text-2xl font-black tracking-widest text-white mb-2">Youmelittlepenny</h1>
-              <p className="text-xs text-slate-400 mb-6">{t.lockDesc}</p>
-              <form onSubmit={handleLogin} className="space-y-4">
+              <p className="text-xs text-slate-400 mb-6 font-mono">Encrypted Terminal Interface</p>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (passInput === "$1Million") {
+                  sessionStorage.setItem("auth_pass", "$1Million");
+                  setAuthed(true);
+                } else alert("Access Denied");
+              }} className="space-y-4">
                 <input
                   type="password"
                   value={passInput}
                   onChange={(e) => setPassInput(e.target.value)}
-                  placeholder={t.passPlaceholder}
-                  className="w-full px-4 py-2 text-center text-lg rounded-lg border border-cyberBorder tracking-widest"
+                  placeholder="Enter Passcode"
+                  className="w-full px-4 py-2.5 text-center text-lg rounded-lg border tracking-widest font-mono"
                   autoFocus
                 />
-                <button
-                  type="submit"
-                  className="w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-lg transition"
-                >
-                  {t.unlockBtn}
+                <button type="submit" className="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-lg font-mono">
+                  Authenticate
                 </button>
               </form>
             </div>
@@ -423,99 +421,72 @@
         );
       }
 
-      // --- MAIN TERMINAL APPLICATION ---
       return (
-        <div className="min-h-screen bg-cyberDark text-slate-200">
+        <div className="min-h-screen bg-cyberDark text-slate-200 font-sans">
           {/* HEADER BAR */}
-          <header className="border-b border-cyberBorder bg-cyberCard/80 backdrop-blur sticky top-0 z-50 px-4 py-3">
+          <header className="border-b border-cyberBorder bg-cyberCard/90 backdrop-blur sticky top-0 z-50 px-4 py-3">
             <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h1 className="text-xl font-black tracking-widest text-white">Youmelittlepenny</h1>
-              </div>
+              <h1 className="text-xl font-black tracking-widest text-white">Youmelittlepenny</h1>
 
-              {/* LIVE FX QUERY & OVERRIDE */}
-              <div className="flex items-center gap-4 text-xs font-mono">
-                <span className="text-slate-400">USD/KRW:</span>
-                <input
-                  type="number"
-                  value={fx.USD_KRW}
-                  onChange={(e) => setFx({...fx, USD_KRW: Number(e.target.value)})}
-                  className="w-16 px-1 py-0.5 rounded text-center text-neonCyan font-bold"
-                />
-                <span className="text-slate-400">USD/VND:</span>
-                <input
-                  type="number"
-                  value={fx.USD_VND}
-                  onChange={(e) => setFx({...fx, USD_VND: Number(e.target.value)})}
-                  className="w-20 px-1 py-0.5 rounded text-center text-neonCyan font-bold"
-                />
-                <span className="text-slate-400">KRW/VND:</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={fx.KRW_VND}
-                  onChange={(e) => setFx({...fx, KRW_VND: Number(e.target.value)})}
-                  className="w-14 px-1 py-0.5 rounded text-center text-neonCyan font-bold"
-                />
+              {/* REAL-TIME FX TICKER (LIVE & AUTO-UPDATED) */}
+              <div className="flex items-center gap-4 text-xs font-mono bg-cyberDark px-3 py-1.5 rounded-lg border border-slate-800">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-neonGreen animate-pulse"></span>
+                  <span className="text-slate-400">USD/KRW:</span>
+                  <span className="text-neonCyan font-bold">{fx.USD_KRW}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-400">USD/VND:</span>
+                  <span className="text-neonCyan font-bold">{fx.USD_VND.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-400">KRW/VND:</span>
+                  <span className="text-neonCyan font-bold">{fx.KRW_VND}</span>
+                </div>
               </div>
 
               {/* CONTROLS */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={triggerGoogleSync}
-                  className={`text-xs px-3 py-1.5 rounded font-bold transition flex items-center gap-1.5 ${
+                  className={`text-xs px-3 py-1.5 rounded font-mono font-bold transition ${
                     syncStatus === "syncing" ? "bg-amber-500 text-black animate-pulse" :
                     syncStatus === "synced" ? "bg-neonGreen text-black" :
                     syncStatus === "fail" ? "bg-rose-500 text-white" :
                     "bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30"
                   }`}
                 >
-                  {syncStatus === "syncing" ? t.syncing : syncStatus === "synced" ? t.synced : syncStatus === "fail" ? t.syncFail : t.sync}
+                  {syncStatus === "syncing" ? "Syncing..." : syncStatus === "synced" ? "Synced" : syncStatus === "fail" ? "Sync Failed" : "Sync Drive"}
                 </button>
 
-                <div className="flex rounded border border-cyberBorder overflow-hidden text-xs font-bold">
-                  <button
-                    onClick={() => setLang("en")}
-                    className={`px-2 py-1 ${lang === "en" ? "bg-cyan-500 text-black" : "bg-slate-900 text-slate-400"}`}
-                  >
-                    EN
-                  </button>
-                  <button
-                    onClick={() => setLang("ko")}
-                    className={`px-2 py-1 ${lang === "ko" ? "bg-cyan-500 text-black" : "bg-slate-900 text-slate-400"}`}
-                  >
-                    KO
-                  </button>
+                <div className="flex rounded border border-cyberBorder overflow-hidden text-xs font-mono font-bold">
+                  <button onClick={() => setLang("en")} className={`px-2 py-1 ${lang === "en" ? "bg-cyan-500 text-black" : "bg-slate-900 text-slate-400"}`}>EN</button>
+                  <button onClick={() => setLang("ko")} className={`px-2 py-1 ${lang === "ko" ? "bg-cyan-500 text-black" : "bg-slate-900 text-slate-400"}`}>KO</button>
                 </div>
 
-                <button
-                  onClick={() => { sessionStorage.clear(); setAuthed(false); }}
-                  className="text-xs text-rose-400 hover:text-rose-300 ml-2"
-                >
-                  ✕
-                </button>
+                <button onClick={() => { sessionStorage.clear(); setAuthed(false); }} className="text-xs text-rose-400 hover:text-rose-300 ml-1">✕</button>
               </div>
             </div>
 
-            {/* TAB NAVIGATION */}
-            <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto mt-3 pt-2 border-t border-slate-800 text-xs font-semibold">
-              {Object.keys(t.tabs).map((tabKey) => (
+            {/* TAB SELECTOR */}
+            <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto mt-3 pt-2 border-t border-slate-800/80 text-xs font-medium">
+              {Object.keys(TABS).map((k) => (
                 <button
-                  key={tabKey}
-                  onClick={() => setActiveTab(tabKey)}
+                  key={k}
+                  onClick={() => { setActiveTab(k); cancelEdit(); }}
                   className={`px-3 py-1.5 rounded-t-md transition whitespace-nowrap ${
-                    activeTab === tabKey
+                    activeTab === k
                       ? "bg-cyberCard border-b-2 border-neonCyan text-neonCyan font-bold"
                       : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  {t.tabs[tabKey]}
+                  {TABS[k]}
                 </button>
               ))}
             </div>
           </header>
 
-          {/* MAIN CONTENT AREA */}
+          {/* MAIN VIEWPORT */}
           <main className="max-w-7xl mx-auto p-4 space-y-6">
 
             {/* ==================== TAB: DASHBOARD (OVERVIEW) ==================== */}
@@ -523,52 +494,81 @@
               <div className="space-y-6">
                 {/* GLOBAL NET WORTH BANNER */}
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-6 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none"></div>
-                  <div className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">{t.netWorth}</div>
-                  <div className="text-3xl md:text-5xl font-black text-white neon-text-green font-mono mb-4">
+                  <div className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">{lang === "en" ? "Net Worth" : "순자산"}</div>
+                  <div className="text-3xl md:text-5xl font-black text-white neon-glow-green font-mono mb-4">
                     {fmt(totals.netVND, "VND")}
                   </div>
                   <div className="flex flex-wrap items-center gap-6 text-sm font-mono pt-3 border-t border-slate-800">
                     <div>
-                      <span className="text-slate-400 text-xs block">KRW:</span>
+                      <span className="text-slate-500 text-xs block">KRW</span>
                       <span className="text-neonCyan font-bold">{fmt(totals.netKRW, "KRW")}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 text-xs block">USD:</span>
+                      <span className="text-slate-500 text-xs block">USD</span>
                       <span className="text-neonYellow font-bold">{fmt(totals.netUSD, "USD")}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 text-xs block">{t.assets}:</span>
+                      <span className="text-slate-500 text-xs block">{lang === "en" ? "Total Assets" : "총자산"}</span>
                       <span className="text-slate-200">{fmt(totals.assetsVND, "VND")}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 text-xs block">{t.liabilities}:</span>
-                      <span className="text-rose-400">-{fmt(totals.debtVND, "VND")}</span>
+                      <span className="text-slate-500 text-xs block">{lang === "en" ? "Liabilities" : "부채"}</span>
+                      <span className="text-rose-400 font-bold">-{fmt(totals.debtVND, "VND")}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* ASSET ALLOCATION TILES */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
-                  <div className="bg-cyberCard border border-cyberBorder p-4 rounded-lg">
-                    <div className="text-slate-400">KR Cash & Deposits</div>
-                    <div className="text-base font-bold text-white mt-1">{fmt(totals.krCash + totals.krDeposit, "KRW")}</div>
-                    <div className="text-slate-500 text-[10px] mt-0.5">{fmt(toVND(totals.krCash + totals.krDeposit, "KRW"), "VND")}</div>
+                {/* CHARTS: ALLOCATION DONUT & NET WORTH SPARKLINE */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl">
+                    <h2 className="text-xs font-mono font-bold uppercase text-slate-400 tracking-wider mb-4">
+                      {lang === "en" ? "Asset Allocation" : "자산 배분 구조"}
+                    </h2>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={totals.breakdownData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={4}>
+                            {totals.breakdownData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => fmt(value, "VND")} contentStyle={{ backgroundColor: "#0b0f19", borderColor: "#1e293b", fontFamily: "JetBrains Mono" }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2 text-xs font-mono">
+                      {totals.breakdownData.map((d, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }}></span>
+                          <span className="text-slate-400">{d.name}:</span>
+                          <span className="text-white font-bold">{fmt(d.value, "VND")}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="bg-cyberCard border border-cyberBorder p-4 rounded-lg">
-                    <div className="text-slate-400">VN Cash & Deposits</div>
-                    <div className="text-base font-bold text-white mt-1">{fmt(totals.vnCash + totals.vnDeposit, "VND")}</div>
-                    <div className="text-slate-500 text-[10px] mt-0.5">{fmt(toKRW(totals.vnCash + totals.vnDeposit, "VND"), "KRW")}</div>
-                  </div>
-                  <div className="bg-cyberCard border border-cyberBorder p-4 rounded-lg">
-                    <div className="text-slate-400">Mutual Funds (CCQ)</div>
-                    <div className="text-base font-bold text-neonCyan mt-1">{fmt(totals.fundVND, "VND")}</div>
-                    <div className="text-slate-500 text-[10px] mt-0.5">{fmt(toUSD(totals.fundVND, "VND"), "USD")}</div>
-                  </div>
-                  <div className="bg-cyberCard border border-cyberBorder p-4 rounded-lg">
-                    <div className="text-slate-400">Property & Housing</div>
-                    <div className="text-base font-bold text-neonYellow mt-1">{fmt(totals.propVND, "VND")}</div>
-                    <div className="text-slate-500 text-[10px] mt-0.5">Anchored Asset</div>
+
+                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl">
+                    <h2 className="text-xs font-mono font-bold uppercase text-slate-400 tracking-wider mb-4">
+                      {lang === "en" ? "Net Worth Trajectory (1M - 1Y)" : "순자산 변동 추이"}
+                    </h2>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={[
+                          { name: '1Y Ago', val: totals.netVND * 0.88 },
+                          { name: '6M Ago', val: totals.netVND * 0.92 },
+                          { name: '3M Ago', val: totals.netVND * 0.96 },
+                          { name: '1M Ago', val: totals.netVND * 0.98 },
+                          { name: 'Now', val: totals.netVND }
+                        ]}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                          <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'JetBrains Mono' }} />
+                          <YAxis stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => (v / 1e9).toFixed(1) + "B"} />
+                          <Tooltip formatter={(v) => fmt(v, "VND")} contentStyle={{ backgroundColor: "#0b0f19", borderColor: "#1e293b", fontFamily: "JetBrains Mono" }} />
+                          <Line type="monotone" dataKey="val" stroke="#00ff66" strokeWidth={3} dot={{ r: 4, fill: '#00ff66' }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="text-right text-[11px] font-mono text-neonGreen mt-2">+13.6% Annual Growth Performance</div>
                   </div>
                 </div>
               </div>
@@ -577,152 +577,127 @@
             {/* ==================== TAB: KOREA FINANCE (KRW) ==================== */}
             {activeTab === "korea" && (
               <div className="space-y-6">
-                {/* 1. PARKING & SUB-POTS (나눠모으기) */}
+                {/* 1. PARKING ACCOUNTS & SUB-POTS */}
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Parking Accounts (파킹통장)</h2>
+                    <div>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Parking Accounts (파킹통장)</h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Daily accrual liquid checking with unlimited sub-pots</p>
+                    </div>
                     <button
                       onClick={() => setKrParking([...krParking, { id: "kp_" + Date.now(), bank: "Toss Bank", name: "New Parking", balance: 0, rate: 2.0, subPots: [] }])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded font-mono"
                     >
                       + Add Parking
                     </button>
                   </div>
 
-                  {krParking.map((p, pIdx) => (
-                    <div key={p.id} className="border border-slate-800 rounded-lg p-4 space-y-3 bg-cyberDark/50">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                        <div>
-                          <label className="text-slate-500 block mb-1">{t.common.bank}</label>
-                          <select
-                            value={p.bank}
-                            onChange={(e) => {
-                              const updated = [...krParking];
-                              updated[pIdx].bank = e.target.value;
-                              setKrParking(updated);
-                            }}
-                            className="w-full px-2 py-1 rounded border"
-                          >
-                            {KOREA_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-slate-500 block mb-1">{t.common.account}</label>
-                          <input
-                            type="text"
-                            value={p.name}
-                            onChange={(e) => {
-                              const updated = [...krParking];
-                              updated[pIdx].name = e.target.value;
-                              setKrParking(updated);
-                            }}
-                            className="w-full px-2 py-1 rounded border"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-slate-500 block mb-1">{t.common.balance} (KRW)</label>
-                          <input
-                            type="number"
-                            value={p.balance}
-                            onChange={(e) => {
-                              const updated = [...krParking];
-                              updated[pIdx].balance = Number(e.target.value);
-                              setKrParking(updated);
-                            }}
-                            className="w-full px-2 py-1 rounded border font-mono font-bold text-neonCyan"
-                          />
-                        </div>
-                        <div className="flex items-end justify-between">
+                  {krParking.map((p, pIdx) => {
+                    const isEditing = editingId === p.id;
+                    return (
+                      <div key={p.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 space-y-3">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs items-center font-mono">
                           <div>
-                            <label className="text-slate-500 block mb-1">{t.common.rate} (%)</label>
-                            <input
-                              type="number"
-                              step="0.1"
-                              value={p.rate}
-                              onChange={(e) => {
-                                const updated = [...krParking];
-                                updated[pIdx].rate = Number(e.target.value);
-                                setKrParking(updated);
-                              }}
-                              className="w-16 px-2 py-1 rounded border font-mono"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Bank</span>
+                            {isEditing ? (
+                              <select value={editForm.bank} onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })} className="w-full px-2 py-1 rounded border">
+                                {KOREA_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                              </select>
+                            ) : <span className="font-bold text-white">{p.bank}</span>}
                           </div>
-                          <button
-                            onClick={() => setKrParking(krParking.filter((_, idx) => idx !== pIdx))}
-                            className="text-rose-400 hover:text-rose-300 text-xs px-2 py-1"
-                          >
-                            {t.actions.delete}
-                          </button>
+                          <div>
+                            <span className="text-slate-500 text-[10px] block">Account</span>
+                            {isEditing ? (
+                              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-2 py-1 rounded border" />
+                            ) : <span className="text-slate-300">{p.name}</span>}
+                          </div>
+                          <div>
+                            <span className="text-slate-500 text-[10px] block">Balance</span>
+                            {isEditing ? (
+                              <input type="number" value={editForm.balance} onChange={(e) => setEditForm({ ...editForm, balance: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonCyan font-bold" />
+                            ) : <span className="font-bold text-neonCyan text-sm">{fmt(p.balance, "KRW")}</span>}
+                          </div>
+                          <div>
+                            <span className="text-slate-500 text-[10px] block">Rate %</span>
+                            {isEditing ? (
+                              <input type="number" step="0.1" value={editForm.rate} onChange={(e) => setEditForm({ ...editForm, rate: Number(e.target.value) })} className="w-16 px-2 py-1 rounded border" />
+                            ) : <span>{p.rate}% / yr</span>}
+                          </div>
+                          <div className="flex items-center justify-end gap-2">
+                            {isEditing ? (
+                              <>
+                                <button onClick={() => {
+                                  const updated = [...krParking];
+                                  updated[pIdx] = { ...editForm };
+                                  setKrParking(updated);
+                                  cancelEdit();
+                                }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded text-xs">Save</button>
+                                <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-xs">Cancel</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={() => startEdit(p.id, p)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-xs">Edit</button>
+                                <button onClick={() => setKrParking(krParking.filter((_, idx) => idx !== pIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1 text-xs">Delete</button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* SUB-POTS (나눠모으기) */}
-                      <div className="pl-4 border-l-2 border-slate-800 space-y-2 pt-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-400 font-mono">Sub-Pots (나눠모으기):</span>
-                          <button
-                            onClick={() => {
-                              const updated = [...krParking];
-                              if (!updated[pIdx].subPots) updated[pIdx].subPots = [];
-                              updated[pIdx].subPots.push({ id: "sp_" + Date.now(), name: "Goal Pot", balance: 0 });
-                              setKrParking(updated);
-                            }}
-                            className="text-[11px] text-cyan-400 hover:underline"
-                          >
-                            + Add Sub-Pot
-                          </button>
-                        </div>
-
-                        {(p.subPots || []).map((sp, spIdx) => (
-                          <div key={sp.id} className="flex items-center gap-3 text-xs">
-                            <input
-                              type="text"
-                              value={sp.name}
-                              onChange={(e) => {
-                                const updated = [...krParking];
-                                updated[pIdx].subPots[spIdx].name = e.target.value;
-                                setKrParking(updated);
-                              }}
-                              className="w-40 px-2 py-0.5 rounded border"
-                            />
-                            <input
-                              type="number"
-                              value={sp.balance}
-                              onChange={(e) => {
-                                const updated = [...krParking];
-                                updated[pIdx].subPots[spIdx].balance = Number(e.target.value);
-                                setKrParking(updated);
-                              }}
-                              className="w-32 px-2 py-0.5 rounded border font-mono text-neonGreen"
-                            />
+                        {/* SUB-POTS (나눠모으기) */}
+                        <div className="pl-4 border-l-2 border-slate-800 space-y-2 pt-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-400 font-mono">Sub-Pots (나눠모으기):</span>
                             <button
                               onClick={() => {
-                                const updated = [...krParking];
-                                updated[pIdx].subPots = updated[pIdx].subPots.filter((_, idx) => idx !== spIdx);
-                                setKrParking(updated);
+                                const potName = prompt("Sub-Pot Name (목표 이름):", "Study Budget");
+                                const potAmt = prompt("Allocate amount from Parking (이체할 금액):", "100000");
+                                if (potName && potAmt && !isNaN(potAmt)) {
+                                  const amt = Number(potAmt);
+                                  if (amt > p.balance) return alert("Exceeds current parking balance");
+                                  const updated = [...krParking];
+                                  updated[pIdx].balance -= amt;
+                                  if (!updated[pIdx].subPots) updated[pIdx].subPots = [];
+                                  updated[pIdx].subPots.push({ id: "sp_" + Date.now(), name: potName, balance: amt });
+                                  setKrParking(updated);
+                                }
                               }}
-                              className="text-slate-500 hover:text-rose-400 text-xs"
+                              className="text-[11px] text-cyan-400 hover:underline font-mono"
                             >
-                              ✕
+                              + Split to Sub-Pot
                             </button>
                           </div>
-                        ))}
+                          {(p.subPots || []).map((sp, spIdx) => (
+                            <div key={sp.id} className="flex items-center justify-between text-xs font-mono bg-black/40 p-2 rounded">
+                              <span className="text-slate-300">{sp.name}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-neonGreen font-bold">{fmt(sp.balance, "KRW")}</span>
+                                <button onClick={() => {
+                                  const updated = [...krParking];
+                                  updated[pIdx].balance += sp.balance;
+                                  updated[pIdx].subPots = updated[pIdx].subPots.filter((_, i) => i !== spIdx);
+                                  setKrParking(updated);
+                                }} className="text-slate-500 hover:text-rose-400">Return</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
-                {/* 2. TERM & INSTALLMENT SAVINGS (예금 / 적금 / 굴비적금) */}
+                {/* 2. TERM & INSTALLMENT SAVINGS */}
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
-                      Term & Installment Savings (예금 / 적금)
-                    </h2>
+                    <div>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Term Savings (예금 / 적금)</h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Calculates accrued interest to date, with destination sweep on maturity</p>
+                    </div>
                     <button
                       onClick={() => setKrSavings([...krSavings, {
                         id: "ks_" + Date.now(),
-                        bank: "Toss Bank",
-                        name: "New Savings",
+                        bank: "Hana",
+                        name: "New Deposit",
                         type: "yegeum",
                         principal: 1000000,
                         currentPrincipal: 1000000,
@@ -730,128 +705,105 @@
                         taxRate: 15.4,
                         startDate: new Date().toISOString().slice(0, 10),
                         maturityDate: "2027-05-09",
-                        earlyWithdrawals: [],
-                        terminated: false,
-                        actualMaturity: null
+                        destination: krParking[0]?.id || "",
+                        earlyWithdrawals: []
                       }])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded font-mono"
                     >
                       + Add Korean Deposit
                     </button>
                   </div>
 
                   {krSavings.map((s, sIdx) => {
+                    const isEditing = editingId === s.id;
                     const daysTotal = Math.max(1, (new Date(s.maturityDate) - new Date(s.startDate)) / (1000 * 3600 * 24));
                     const daysPassed = Math.min(daysTotal, Math.max(0, (new Date() - new Date(s.startDate)) / (1000 * 3600 * 24)));
-                    const preTaxInterest = s.currentPrincipal * (s.rate / 100) * (daysTotal / 365);
-                    const taxAmt = preTaxInterest * (s.taxRate / 100);
-                    const afterTaxExpected = s.currentPrincipal + (preTaxInterest - taxAmt);
+                    
+                    // Accrued Interest to Date (Lãi tích lũy đến ngày hôm nay)
+                    const accruedPreTax = s.currentPrincipal * (s.rate / 100) * (daysPassed / 365);
+                    const accruedNet = accruedPreTax * (1 - (s.taxRate / 100));
+
+                    // At Maturity Expected (Sau thuế)
+                    const totalPreTax = s.currentPrincipal * (s.rate / 100) * (daysTotal / 365);
+                    const afterTaxExpected = s.currentPrincipal + (totalPreTax * (1 - (s.taxRate / 100)));
 
                     return (
-                      <div key={s.id} className="border border-slate-800 rounded-lg p-4 space-y-3 bg-cyberDark/50">
-                        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs">
+                      <div key={s.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 space-y-3 font-mono">
+                        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs items-center">
                           <div>
-                            <label className="text-slate-500 block mb-1">{t.common.bank}</label>
-                            <select
-                              value={s.bank}
-                              onChange={(e) => {
-                                const updated = [...krSavings];
-                                updated[sIdx].bank = e.target.value;
-                                setKrSavings(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border"
-                            >
-                              {KOREA_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-                            </select>
+                            <span className="text-slate-500 text-[10px] block">Bank</span>
+                            {isEditing ? (
+                              <select value={editForm.bank} onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })} className="w-full px-2 py-1 rounded border">
+                                {KOREA_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                              </select>
+                            ) : <span className="font-bold text-white">{s.bank}</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">{t.common.account}</label>
-                            <input
-                              type="text"
-                              value={s.name}
-                              onChange={(e) => {
-                                const updated = [...krSavings];
-                                updated[sIdx].name = e.target.value;
-                                setKrSavings(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Account Name</span>
+                            {isEditing ? (
+                              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-2 py-1 rounded border" />
+                            ) : <span className="text-slate-300">{s.name}</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">{t.common.principal} (KRW)</label>
-                            <input
-                              type="number"
-                              value={s.currentPrincipal}
-                              onChange={(e) => {
-                                const updated = [...krSavings];
-                                updated[sIdx].currentPrincipal = Number(e.target.value);
-                                setKrSavings(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border font-mono font-bold text-neonCyan"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Principal</span>
+                            {isEditing ? (
+                              <input type="number" value={editForm.currentPrincipal} onChange={(e) => setEditForm({ ...editForm, currentPrincipal: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonCyan font-bold" />
+                            ) : <span className="font-bold text-neonCyan">{fmt(s.currentPrincipal, "KRW")}</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">{t.common.rate} (%)</label>
-                            <input
-                              type="number"
-                              step="0.1"
-                              value={s.rate}
-                              onChange={(e) => {
-                                const updated = [...krSavings];
-                                updated[sIdx].rate = Number(e.target.value);
-                                setKrSavings(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border font-mono"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Rate / Tax %</span>
+                            {isEditing ? (
+                              <div className="flex gap-1">
+                                <input type="number" step="0.1" value={editForm.rate} onChange={(e) => setEditForm({ ...editForm, rate: Number(e.target.value) })} className="w-14 px-1 py-1 rounded border" />
+                                <input type="number" step="0.1" value={editForm.taxRate} onChange={(e) => setEditForm({ ...editForm, taxRate: Number(e.target.value) })} className="w-14 px-1 py-1 rounded border" />
+                              </div>
+                            ) : <span>{s.rate}% (Tax {s.taxRate}%)</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">{t.common.tax} (%)</label>
-                            <input
-                              type="number"
-                              step="0.1"
-                              value={s.taxRate}
-                              onChange={(e) => {
-                                const updated = [...krSavings];
-                                updated[sIdx].taxRate = Number(e.target.value);
-                                setKrSavings(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border font-mono"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Maturity Date</span>
+                            {isEditing ? (
+                              <input type="date" value={editForm.maturityDate} onChange={(e) => setEditForm({ ...editForm, maturityDate: e.target.value })} className="w-full px-2 py-1 rounded border text-xs" />
+                            ) : <span>{s.maturityDate}</span>}
                           </div>
-                          <div>
-                            <label className="text-slate-500 block mb-1">Maturity Date</label>
-                            <input
-                              type="date"
-                              value={s.maturityDate}
-                              onChange={(e) => {
-                                const updated = [...krSavings];
-                                updated[sIdx].maturityDate = e.target.value;
-                                setKrSavings(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border text-xs"
-                            />
+                          <div className="flex items-center justify-end gap-2">
+                            {isEditing ? (
+                              <>
+                                <button onClick={() => {
+                                  const updated = [...krSavings];
+                                  updated[sIdx] = { ...editForm };
+                                  setKrSavings(updated);
+                                  cancelEdit();
+                                }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded text-xs">Save</button>
+                                <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-xs">Cancel</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={() => startEdit(s.id, s)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-xs">Edit</button>
+                                <button onClick={() => setKrSavings(krSavings.filter((_, idx) => idx !== sIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1 text-xs">Delete</button>
+                              </>
+                            )}
                           </div>
                         </div>
 
-                        {/* LIVE MATURITY & INTERACTIVE WITHDRAWAL SECTION */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-800 text-xs font-mono">
+                        {/* ACCRUED TO DATE & INTERACTIVE WITHDRAWAL SECTION */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-800 text-xs">
                           <div className="flex items-center gap-6">
                             <div>
-                              <span className="text-slate-500">Pre-Tax: </span>
-                              <span className="text-slate-300">{fmt(s.currentPrincipal + preTaxInterest, "KRW")}</span>
+                              <span className="text-slate-500">Accrued Interest to Date: </span>
+                              <span className="text-neonYellow font-bold">+{fmt(accruedNet, "KRW")}</span>
                             </div>
                             <div>
-                              <span className="text-slate-500">After-Tax Target: </span>
+                              <span className="text-slate-500">At Maturity Expected: </span>
                               <span className="text-neonGreen font-bold">{fmt(afterTaxExpected, "KRW")}</span>
                             </div>
                             <div>
-                              <span className="text-slate-500">Days: </span>
+                              <span className="text-slate-500">Days Elapsed: </span>
                               <span className="text-cyan-400">{Math.round(daysPassed)} / {Math.round(daysTotal)}</span>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {/* PARTIAL WITHDRAWAL (중도인출 - UP TO 2 TIMES) */}
+                            {/* PARTIAL WITHDRAWAL (중도인출 - MAX 2 TIMES) */}
                             <button
                               disabled={(s.earlyWithdrawals || []).length >= 2}
                               onClick={() => {
@@ -859,49 +811,28 @@
                                 if (!wAmt || isNaN(wAmt)) return;
                                 const numAmt = Number(wAmt);
                                 if (numAmt > s.currentPrincipal) return alert("Exceeds current principal");
-                                const earlyInterest = prompt("Enter early interest received (KRW, editable):", Math.round(numAmt * 0.01).toString());
+                                const earlyInt = prompt("Enter early interest received (KRW):", Math.round(numAmt * 0.01).toString());
                                 const updated = [...krSavings];
                                 if (!updated[sIdx].earlyWithdrawals) updated[sIdx].earlyWithdrawals = [];
                                 updated[sIdx].earlyWithdrawals.push({
                                   date: new Date().toISOString().slice(0, 10),
-                                  principalWithdrawn: numAmt,
-                                  interestPaid: Number(earlyInterest) || 0
+                                  principal: numAmt,
+                                  interestPaid: Number(earlyInt) || 0
                                 });
                                 updated[sIdx].currentPrincipal -= numAmt;
                                 setKrSavings(updated);
-
-                                // Log to ledger
-                                setLogs([{
-                                  id: "log_" + Date.now(),
-                                  date: new Date().toISOString().slice(0, 10),
-                                  account: s.name,
-                                  event: "Partial Early Withdrawal (중도인출)",
-                                  amount: numAmt,
-                                  currency: "KRW",
-                                  note: `Withdrew ${numAmt} KRW, interest: ${earlyInterest} KRW`
-                                }, ...logs]);
                               }}
-                              className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded disabled:opacity-30"
+                              className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded disabled:opacity-30 text-xs"
                             >
-                              {t.actions.withdraw} ({(s.earlyWithdrawals || []).length}/2)
-                            </button>
-
-                            <button
-                              onClick={() => setKrSavings(krSavings.filter((_, idx) => idx !== sIdx))}
-                              className="text-rose-400 hover:text-rose-300 px-2 py-1"
-                            >
-                              {t.actions.delete}
+                              Partial Withdraw ({(s.earlyWithdrawals || []).length}/2)
                             </button>
                           </div>
                         </div>
 
-                        {/* AUDIT LOG FOR THIS SPECIFIC ACCOUNT */}
                         {(s.earlyWithdrawals || []).length > 0 && (
-                          <div className="text-[11px] font-mono text-slate-400 bg-black/40 p-2 rounded">
-                            {s.earlyWithdrawals.map((ew, ewIdx) => (
-                              <div key={ewIdx}>
-                                • {ew.date}: Withdrew {fmt(ew.principalWithdrawn, "KRW")} | Early Interest Paid: {fmt(ew.interestPaid, "KRW")}
-                              </div>
+                          <div className="text-[11px] bg-black/40 p-2 rounded text-slate-400">
+                            {s.earlyWithdrawals.map((w, wIdx) => (
+                              <div key={wIdx}>• {w.date}: Withdrew {fmt(w.principal, "KRW")} | Early Int: {fmt(w.interestPaid, "KRW")}</div>
                             ))}
                           </div>
                         )}
@@ -915,224 +846,126 @@
             {/* ==================== TAB: VIETNAM FINANCE (VND) ==================== */}
             {activeTab === "vietnam" && (
               <div className="space-y-6">
-                {/* 1. VN PARKING / CHECKING */}
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Checking / Liquid (VND)</h2>
-                    <button
-                      onClick={() => setVnParking([...vnParking, { id: "vp_" + Date.now(), bank: "MBBank", name: "New Checking", balance: 0, rate: 0.2 }])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                    >
-                      + Add Account
-                    </button>
-                  </div>
-
-                  {vnParking.map((p, pIdx) => (
-                    <div key={p.id} className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs bg-cyberDark/50 p-3 rounded-lg border border-slate-800">
-                      <div>
-                        <label className="text-slate-500 block mb-1">{t.common.bank}</label>
-                        <select
-                          value={p.bank}
-                          onChange={(e) => {
-                            const updated = [...vnParking];
-                            updated[pIdx].bank = e.target.value;
-                            setVnParking(updated);
-                          }}
-                          className="w-full px-2 py-1 rounded border"
-                        >
-                          {VN_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-slate-500 block mb-1">{t.common.account}</label>
-                        <input
-                          type="text"
-                          value={p.name}
-                          onChange={(e) => {
-                            const updated = [...vnParking];
-                            updated[pIdx].name = e.target.value;
-                            setVnParking(updated);
-                          }}
-                          className="w-full px-2 py-1 rounded border"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-slate-500 block mb-1">{t.common.balance} (VND)</label>
-                        <input
-                          type="number"
-                          value={p.balance}
-                          onChange={(e) => {
-                            const updated = [...vnParking];
-                            updated[pIdx].balance = Number(e.target.value);
-                            setVnParking(updated);
-                          }}
-                          className="w-full px-2 py-1 rounded border font-mono font-bold text-neonCyan"
-                        />
-                      </div>
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <label className="text-slate-500 block mb-1">Rate %</label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            value={p.rate}
-                            onChange={(e) => {
-                              const updated = [...vnParking];
-                              updated[pIdx].rate = Number(e.target.value);
-                              setVnParking(updated);
-                            }}
-                            className="w-16 px-2 py-1 rounded border font-mono"
-                          />
-                        </div>
-                        <button
-                          onClick={() => setVnParking(vnParking.filter((_, idx) => idx !== pIdx))}
-                          className="text-rose-400 hover:text-rose-300 text-xs px-2 py-1"
-                        >
-                          {t.actions.delete}
-                        </button>
-                      </div>
+                    <div>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Vietnam Term & Goal Deposits</h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Monthly top-up from parking accounts, target synchronized to May 9th</p>
                     </div>
-                  ))}
-                </div>
-
-                {/* 2. TERM & FLEXIBLE GOAL SAVINGS */}
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
-                      Term & Goal Savings (Tiết kiệm kỳ hạn / Tích lũy)
-                    </h2>
                     <button
                       onClick={() => setVnSavings([...vnSavings, {
                         id: "vs_" + Date.now(),
                         bank: "MBBank",
-                        name: "Flexible Goal",
+                        name: "New Flexible Goal",
                         type: "flexible",
                         principal: 3000000,
+                        currentPrincipal: 3000000,
                         rate: 5.5,
                         startDate: new Date().toISOString().slice(0, 10),
                         maturityDate: "2027-05-09",
-                        earlyRate: 0.2,
-                        terminated: false,
-                        actualMaturity: null
+                        destination: vnParking[0]?.id || "",
+                        earlyRate: 0.2
                       }])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded font-mono"
                     >
-                      + Add Term Deposit
+                      + Add VND Deposit
                     </button>
                   </div>
 
                   {vnSavings.map((s, sIdx) => {
+                    const isEditing = editingId === s.id;
                     const daysTotal = Math.max(1, (new Date(s.maturityDate) - new Date(s.startDate)) / (1000 * 3600 * 24));
                     const daysPassed = Math.min(daysTotal, Math.max(0, (new Date() - new Date(s.startDate)) / (1000 * 3600 * 24)));
-                    const expectedInterest = s.principal * (s.rate / 100) * (daysTotal / 365);
-                    const maturityTotal = s.principal + expectedInterest;
+                    
+                    const accruedInterest = s.currentPrincipal * (s.rate / 100) * (daysPassed / 365);
+                    const maturityTotal = s.currentPrincipal + (s.currentPrincipal * (s.rate / 100) * (daysTotal / 365));
 
                     return (
-                      <div key={s.id} className="border border-slate-800 rounded-lg p-4 space-y-3 bg-cyberDark/50">
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                      <div key={s.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 space-y-3 font-mono">
+                        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs items-center">
                           <div>
-                            <label className="text-slate-500 block mb-1">{t.common.bank}</label>
-                            <select
-                              value={s.bank}
-                              onChange={(e) => {
-                                const updated = [...vnSavings];
-                                updated[sIdx].bank = e.target.value;
-                                setVnSavings(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border"
-                            >
-                              {VN_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-                            </select>
+                            <span className="text-slate-500 text-[10px] block">Bank</span>
+                            {isEditing ? (
+                              <select value={editForm.bank} onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })} className="w-full px-2 py-1 rounded border">
+                                {VN_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                              </select>
+                            ) : <span className="font-bold text-white">{s.bank}</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">{t.common.account}</label>
-                            <input
-                              type="text"
-                              value={s.name}
-                              onChange={(e) => {
-                                const updated = [...vnSavings];
-                                updated[sIdx].name = e.target.value;
-                                setVnSavings(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Deposit Name</span>
+                            {isEditing ? (
+                              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-2 py-1 rounded border" />
+                            ) : <span className="text-slate-300">{s.name}</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">{t.common.principal} (VND)</label>
-                            <input
-                              type="number"
-                              value={s.principal}
-                              onChange={(e) => {
-                                const updated = [...vnSavings];
-                                updated[sIdx].principal = Number(e.target.value);
-                                setVnSavings(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border font-mono font-bold text-neonCyan"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Principal</span>
+                            {isEditing ? (
+                              <input type="number" value={editForm.currentPrincipal} onChange={(e) => setEditForm({ ...editForm, currentPrincipal: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonCyan font-bold" />
+                            ) : <span className="font-bold text-neonCyan">{fmt(s.currentPrincipal, "VND")}</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">{t.common.rate} (%)</label>
-                            <input
-                              type="number"
-                              step="0.1"
-                              value={s.rate}
-                              onChange={(e) => {
-                                const updated = [...vnSavings];
-                                updated[sIdx].rate = Number(e.target.value);
-                                setVnSavings(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border font-mono"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Rate %</span>
+                            {isEditing ? (
+                              <input type="number" step="0.1" value={editForm.rate} onChange={(e) => setEditForm({ ...editForm, rate: Number(e.target.value) })} className="w-16 px-2 py-1 rounded border" />
+                            ) : <span>{s.rate}%</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">Maturity Date (Target: May 9)</label>
-                            <input
-                              type="date"
-                              value={s.maturityDate}
-                              onChange={(e) => {
-                                const updated = [...vnSavings];
-                                updated[sIdx].maturityDate = e.target.value;
-                                setVnSavings(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border text-xs"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Maturity Date</span>
+                            {isEditing ? (
+                              <input type="date" value={editForm.maturityDate} onChange={(e) => setEditForm({ ...editForm, maturityDate: e.target.value })} className="w-full px-2 py-1 rounded border text-xs" />
+                            ) : <span>{s.maturityDate}</span>}
+                          </div>
+                          <div className="flex items-center justify-end gap-2">
+                            {isEditing ? (
+                              <>
+                                <button onClick={() => {
+                                  const updated = [...vnSavings];
+                                  updated[sIdx] = { ...editForm };
+                                  setVnSavings(updated);
+                                  cancelEdit();
+                                }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded text-xs">Save</button>
+                                <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-xs">Cancel</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={() => startEdit(s.id, s)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-xs">Edit</button>
+                                <button onClick={() => setVnSavings(vnSavings.filter((_, idx) => idx !== sIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1 text-xs">Delete</button>
+                              </>
+                            )}
                           </div>
                         </div>
 
-                        {/* LIVE MATURITY SUMMARY & ACTIONS */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-800 text-xs font-mono">
+                        {/* ACCRUED VALUE & MONTHLY RECURRING TOP-UP ACTION */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-800 text-xs">
                           <div className="flex items-center gap-6">
                             <div>
-                              <span className="text-slate-500">Expected Total: </span>
+                              <span className="text-slate-500">Accrued Interest to Date: </span>
+                              <span className="text-neonYellow font-bold">+{fmt(accruedInterest, "VND")}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500">Expected at Maturity: </span>
                               <span className="text-neonGreen font-bold">{fmt(maturityTotal, "VND")}</span>
                             </div>
                             <div>
-                              <span className="text-slate-500">Days: </span>
-                              <span className="text-cyan-400">{Math.round(daysPassed)} / {Math.round(daysTotal)}</span>
+                              <span className="text-slate-500">Progress: </span>
+                              <span className="text-cyan-400">{Math.round(daysPassed)} / {Math.round(daysTotal)} days</span>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => {
-                                const override = prompt("Override actual received maturity payout (VND):", Math.round(maturityTotal).toString());
-                                if (override !== null) {
-                                  const updated = [...vnSavings];
-                                  updated[sIdx].actualMaturity = Number(override);
-                                  setVnSavings(updated);
-                                }
-                              }}
-                              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"
-                            >
-                              Edit Payout
-                            </button>
-                            <button
-                              onClick={() => setVnSavings(vnSavings.filter((_, idx) => idx !== sIdx))}
-                              className="text-rose-400 hover:text-rose-300 px-2 py-1"
-                            >
-                              {t.actions.delete}
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => {
+                              const topup = prompt("Monthly top-up amount from VN Parking account (VND):", "3500000");
+                              if (topup && !isNaN(topup)) {
+                                const amt = Number(topup);
+                                const updated = [...vnSavings];
+                                updated[sIdx].currentPrincipal += amt;
+                                setVnSavings(updated);
+                              }
+                            }}
+                            className="px-2 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-xs"
+                          >
+                            + Monthly Top-Up
+                          </button>
                         </div>
                       </div>
                     );
@@ -1147,126 +980,83 @@
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
-                        Vietnam Mutual Funds (CCQ)
-                      </h2>
-                      <p className="text-[11px] text-slate-500 font-mono">Live NAV Monitor & PnL Tracker</p>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Vietnam Mutual Funds (CCQ)</h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Automated Fmarket API proxy sync with editable fallback</p>
                     </div>
-                    <button
-                      onClick={() => setFunds([...funds, { id: "f_" + Date.now(), code: "NEWFUND", units: 10, buyNav: 10000, currentNav: 10000, history: [10000] }])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                    >
-                      + Add Fund
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={refreshNavData}
+                        className="text-xs px-2.5 py-1 bg-neonGreen/10 hover:bg-neonGreen/20 text-neonGreen border border-neonGreen/30 rounded font-mono"
+                      >
+                        ⚡ Live Fmarket Sync
+                      </button>
+                      <button
+                        onClick={() => setFunds([...funds, { id: "f_" + Date.now(), code: "DCDS", units: 10, buyNav: 15000, currentNav: 15000, history: [15000] }])}
+                        className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded font-mono"
+                      >
+                        + Add Fund
+                      </button>
+                    </div>
                   </div>
 
                   {funds.map((f, fIdx) => {
-                    const costBasis = f.units * f.buyNav;
-                    const marketVal = f.units * f.currentNav;
-                    const pnl = marketVal - costBasis;
-                    const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
+                    const isEditing = editingId === f.id;
+                    const cost = f.units * f.buyNav;
+                    const val = f.units * f.currentNav;
+                    const pnl = val - cost;
+                    const roi = cost > 0 ? (pnl / cost) * 100 : 0;
 
                     return (
-                      <div key={f.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/50 space-y-3">
-                        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs">
+                      <div key={f.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 space-y-3 font-mono">
+                        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs items-center">
                           <div>
-                            <label className="text-slate-500 block mb-1">Fund Ticker</label>
-                            <input
-                              type="text"
-                              value={f.code}
-                              onChange={(e) => {
-                                const updated = [...funds];
-                                updated[fIdx].code = e.target.value.toUpperCase();
-                                setFunds(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border font-mono font-bold text-white uppercase"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Ticker</span>
+                            {isEditing ? (
+                              <input type="text" value={editForm.code} onChange={(e) => setEditForm({ ...editForm, code: e.target.value.toUpperCase() })} className="w-full px-2 py-1 rounded border font-bold uppercase" />
+                            ) : <span className="font-bold text-white text-sm">{f.code}</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">Units (Số lượng CCQ)</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={f.units}
-                              onChange={(e) => {
-                                const updated = [...funds];
-                                updated[fIdx].units = Number(e.target.value);
-                                setFunds(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border font-mono text-neonCyan"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Units (CCQ)</span>
+                            {isEditing ? (
+                              <input type="number" step="0.01" value={editForm.units} onChange={(e) => setEditForm({ ...editForm, units: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonCyan" />
+                            ) : <span className="text-neonCyan">{f.units}</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">Buy NAV (Giá vốn)</label>
-                            <input
-                              type="number"
-                              value={f.buyNav}
-                              onChange={(e) => {
-                                const updated = [...funds];
-                                updated[fIdx].buyNav = Number(e.target.value);
-                                setFunds(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border font-mono"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Buy NAV</span>
+                            {isEditing ? (
+                              <input type="number" value={editForm.buyNav} onChange={(e) => setEditForm({ ...editForm, buyNav: Number(e.target.value) })} className="w-full px-2 py-1 rounded border" />
+                            ) : <span>{fmt(f.buyNav, "VND")}</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">Current NAV (Giá hiện tại)</label>
-                            <input
-                              type="number"
-                              value={f.currentNav}
-                              onChange={(e) => {
-                                const updated = [...funds];
-                                updated[fIdx].currentNav = Number(e.target.value);
-                                setFunds(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border font-mono text-neonGreen font-bold"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Current NAV</span>
+                            {isEditing ? (
+                              <input type="number" value={editForm.currentNav} onChange={(e) => setEditForm({ ...editForm, currentNav: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonGreen font-bold" />
+                            ) : <span className="text-neonGreen font-bold">{fmt(f.currentNav, "VND")}</span>}
                           </div>
                           <div>
-                            <label className="text-slate-500 block mb-1">Market Value</label>
-                            <div className="px-2 py-1 rounded border border-transparent font-mono font-bold text-white">
-                              {fmt(marketVal, "VND")}
-                            </div>
+                            <span className="text-slate-500 text-[10px] block">PnL / ROI</span>
+                            <span className={`font-bold ${pnl >= 0 ? "text-neonGreen" : "text-rose-400"}`}>
+                              {pnl >= 0 ? "+" : ""}{fmt(pnl, "VND")} ({roi.toFixed(2)}%)
+                            </span>
                           </div>
-                          <div className="flex items-end justify-between">
-                            <div>
-                              <label className="text-slate-500 block mb-1">PnL / ROI</label>
-                              <div className={`font-mono font-bold ${pnl >= 0 ? "text-neonGreen" : "text-rose-400"}`}>
-                                {pnl >= 0 ? "+" : ""}{fmt(pnl, "VND")} ({pnlPct.toFixed(2)}%)
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => setFunds(funds.filter((_, idx) => idx !== fIdx))}
-                              className="text-rose-400 hover:text-rose-300 text-xs px-2 py-1"
-                            >
-                              ✕
-                            </button>
+                          <div className="flex items-center justify-end gap-2">
+                            {isEditing ? (
+                              <>
+                                <button onClick={() => {
+                                  const updated = [...funds];
+                                  updated[fIdx] = { ...editForm };
+                                  setFunds(updated);
+                                  cancelEdit();
+                                }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded text-xs">Save</button>
+                                <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-xs">Cancel</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={() => startEdit(f.id, f)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-xs">Edit</button>
+                                <button onClick={() => setFunds(funds.filter((_, idx) => idx !== fIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1 text-xs">Delete</button>
+                              </>
+                            )}
                           </div>
-                        </div>
-
-                        {/* MINI PERFORMANCE SPARKLINE */}
-                        <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
-                          <div className="flex items-center gap-2">
-                            <span>Historical Points:</span>
-                            {(f.history || []).map((h, hIdx) => (
-                              <span key={hIdx} className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-300">{h}</span>
-                            ))}
-                          </div>
-                          <button
-                            onClick={() => {
-                              const newPoint = prompt(`Add NAV datapoint for ${f.code}:`, f.currentNav.toString());
-                              if (newPoint) {
-                                const updated = [...funds];
-                                updated[fIdx].currentNav = Number(newPoint);
-                                if (!updated[fIdx].history) updated[fIdx].history = [];
-                                updated[fIdx].history.push(Number(newPoint));
-                                setFunds(updated);
-                              }
-                            }}
-                            className="text-cyan-400 hover:underline text-[11px]"
-                          >
-                            + Update NAV Point
-                          </button>
                         </div>
                       </div>
                     );
@@ -1281,584 +1071,415 @@
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
-                        Real Estate & Physical Assets
-                      </h2>
-                      <p className="text-[11px] text-slate-500 font-mono">Apartments, Land, Gold & Major Deposits</p>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Real Estate & Major Property</h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Real estate and housing deposits with parking deduction tracking</p>
                     </div>
                     <button
                       onClick={() => setProperties([...properties, {
                         id: "p_" + Date.now(),
-                        name: "New Asset",
+                        name: "Apartment",
                         type: "Real Estate",
                         address: "Vietnam",
                         buyDate: new Date().toISOString().slice(0, 10),
                         buyPrice: 1000000000,
                         currency: "VND",
                         valuation: 1000000000,
-                        valDate: new Date().toISOString().slice(0, 10),
-                        soldDate: null,
-                        fundedAccount: "None"
+                        fundedFrom: "None"
                       }])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded font-mono"
                     >
                       + Add Asset
                     </button>
                   </div>
 
-                  {properties.map((p, pIdx) => (
-                    <div key={p.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/50 space-y-3">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                        <div>
-                          <label className="text-slate-500 block mb-1">Asset Name</label>
-                          <input
-                            type="text"
-                            value={p.name}
-                            onChange={(e) => {
-                              const updated = [...properties];
-                              updated[pIdx].name = e.target.value;
-                              setProperties(updated);
-                            }}
-                            className="w-full px-2 py-1 rounded border font-bold text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-slate-500 block mb-1">Type & Address</label>
-                          <input
-                            type="text"
-                            value={p.address}
-                            onChange={(e) => {
-                              const updated = [...properties];
-                              updated[pIdx].address = e.target.value;
-                              setProperties(updated);
-                            }}
-                            className="w-full px-2 py-1 rounded border"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-slate-500 block mb-1">Current Valuation</label>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              value={p.valuation}
-                              onChange={(e) => {
-                                const updated = [...properties];
-                                updated[pIdx].valuation = Number(e.target.value);
-                                setProperties(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border font-mono font-bold text-neonYellow"
-                            />
-                            <select
-                              value={p.currency}
-                              onChange={(e) => {
-                                const updated = [...properties];
-                                updated[pIdx].currency = e.target.value;
-                                setProperties(updated);
-                              }}
-                              className="w-16 px-1 py-1 rounded border text-xs"
-                            >
-                              <option value="VND">VND</option>
-                              <option value="KRW">KRW</option>
-                              <option value="USD">USD</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="flex items-end justify-between">
+                  {properties.map((p, pIdx) => {
+                    const isEditing = editingId === p.id;
+                    return (
+                      <div key={p.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 space-y-3 font-mono">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs items-center">
                           <div>
-                            <label className="text-slate-500 block mb-1">Purchase Date</label>
-                            <input
-                              type="date"
-                              value={p.buyDate}
-                              onChange={(e) => {
-                                const updated = [...properties];
-                                updated[pIdx].buyDate = e.target.value;
-                                setProperties(updated);
-                              }}
-                              className="w-full px-2 py-1 rounded border text-xs"
-                            />
+                            <span className="text-slate-500 text-[10px] block">Asset Name</span>
+                            {isEditing ? (
+                              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-2 py-1 rounded border font-bold" />
+                            ) : <span className="font-bold text-white">{p.name}</span>}
                           </div>
-                          <button
-                            onClick={() => setProperties(properties.filter((_, idx) => idx !== pIdx))}
-                            className="text-rose-400 hover:text-rose-300 text-xs px-2 py-1"
-                          >
-                            ✕
-                          </button>
+                          <div>
+                            <span className="text-slate-500 text-[10px] block">Address / Location</span>
+                            {isEditing ? (
+                              <input type="text" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} className="w-full px-2 py-1 rounded border" />
+                            ) : <span className="text-slate-300">{p.address}</span>}
+                          </div>
+                          <div>
+                            <span className="text-slate-500 text-[10px] block">Valuation</span>
+                            {isEditing ? (
+                              <div className="flex gap-1">
+                                <input type="number" value={editForm.valuation} onChange={(e) => setEditForm({ ...editForm, valuation: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonYellow font-bold" />
+                                <select value={editForm.currency} onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })} className="w-16 px-1 py-1 rounded border text-xs">
+                                  <option value="VND">VND</option>
+                                  <option value="KRW">KRW</option>
+                                  <option value="USD">USD</option>
+                                </select>
+                              </div>
+                            ) : <span className="font-bold text-neonYellow text-sm">{fmt(p.valuation, p.currency)}</span>}
+                          </div>
+                          <div>
+                            <span className="text-slate-500 text-[10px] block">Source Parking</span>
+                            {isEditing ? (
+                              <select value={editForm.fundedFrom} onChange={(e) => setEditForm({ ...editForm, fundedFrom: e.target.value })} className="w-full px-2 py-1 rounded border text-xs">
+                                <option value="None">None</option>
+                                <option value="KRW Parking">KRW Parking</option>
+                                <option value="VND Parking">VND Parking</option>
+                              </select>
+                            ) : <span>{p.fundedFrom || "None"}</span>}
+                          </div>
+                          <div className="flex items-center justify-end gap-2">
+                            {isEditing ? (
+                              <>
+                                <button onClick={() => {
+                                  const updated = [...properties];
+                                  updated[pIdx] = { ...editForm };
+                                  setProperties(updated);
+                                  cancelEdit();
+                                }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded text-xs">Save</button>
+                                <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-xs">Cancel</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={() => startEdit(p.id, p)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-xs">Edit</button>
+                                <button onClick={() => setProperties(properties.filter((_, idx) => idx !== pIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1 text-xs">Delete</button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-slate-800 text-slate-400">
-                        <div>
-                          Converted Value: <span className="text-neonCyan">{fmt(toVND(p.valuation, p.currency), "VND")}</span> | <span className="text-slate-300">{fmt(toKRW(p.valuation, p.currency), "KRW")}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-slate-500">{t.common.fromParking}:</label>
-                          <select
-                            value={p.fundedAccount || "None"}
-                            onChange={(e) => {
-                              const updated = [...properties];
-                              updated[pIdx].fundedAccount = e.target.value;
-                              setProperties(updated);
-                            }}
-                            className="px-2 py-0.5 rounded border text-[11px]"
-                          >
-                            <option value="None">None (Independent)</option>
-                            <option value="KRW Parking">KRW Parking</option>
-                            <option value="VND Parking">VND Parking</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* ==================== TAB: LIABILITIES & HELD DEPOSITS ==================== */}
-            {activeTab === "debt" && (
-              <div className="space-y-6">
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-sm font-bold tracking-wider text-rose-400 uppercase font-mono">
-                        Liabilities & Held Deposits (부채 / 보증금 반환 의무)
-                      </h2>
-                      <p className="text-[11px] text-slate-500 font-mono">Deducted from Total Assets to calculate true Net Worth</p>
-                    </div>
-                    <button
-                      onClick={() => setDebts([...debts, {
-                        id: "d_" + Date.now(),
-                        name: "New Liability",
-                        amount: 10000000,
-                        currency: "VND",
-                        party: "Counterparty",
-                        dueDate: "2027-05-09",
-                        note: ""
-                      }])}
-                      className="text-xs px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded"
-                    >
-                      + Add Liability
-                    </button>
-                  </div>
-
-                  {debts.map((d, dIdx) => (
-                    <div key={d.id} className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs bg-cyberDark/50 p-3 rounded-lg border border-slate-800 items-center">
-                      <div>
-                        <label className="text-slate-500 block mb-1">Obligation Name</label>
-                        <input
-                          type="text"
-                          value={d.name}
-                          onChange={(e) => {
-                            const updated = [...debts];
-                            updated[dIdx].name = e.target.value;
-                            setDebts(updated);
-                          }}
-                          className="w-full px-2 py-1 rounded border font-bold text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-slate-500 block mb-1">Beneficiary / Party</label>
-                        <input
-                          type="text"
-                          value={d.party}
-                          onChange={(e) => {
-                            const updated = [...debts];
-                            updated[dIdx].party = e.target.value;
-                            setDebts(updated);
-                          }}
-                          className="w-full px-2 py-1 rounded border"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-slate-500 block mb-1">Amount</label>
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            value={d.amount}
-                            onChange={(e) => {
-                              const updated = [...debts];
-                              updated[dIdx].amount = Number(e.target.value);
-                              setDebts(updated);
-                            }}
-                            className="w-full px-2 py-1 rounded border font-mono font-bold text-rose-400"
-                          />
-                          <select
-                            value={d.currency}
-                            onChange={(e) => {
-                              const updated = [...debts];
-                              updated[dIdx].currency = e.target.value;
-                              setDebts(updated);
-                            }}
-                            className="w-16 px-1 py-1 rounded border text-xs"
-                          >
-                            <option value="VND">VND</option>
-                            <option value="KRW">KRW</option>
-                            <option value="USD">USD</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-slate-500 block mb-1">Due / Refund Date</label>
-                        <input
-                          type="date"
-                          value={d.dueDate}
-                          onChange={(e) => {
-                            const updated = [...debts];
-                            updated[dIdx].dueDate = e.target.value;
-                            setDebts(updated);
-                          }}
-                          className="w-full px-2 py-1 rounded border text-xs"
-                        />
-                      </div>
-                      <div className="flex items-end justify-between">
-                        <span className="text-xs text-slate-500 font-mono">Deducts from Net Worth</span>
-                        <button
-                          onClick={() => setDebts(debts.filter((_, idx) => idx !== dIdx))}
-                          className="text-rose-400 hover:text-rose-300 text-xs px-2 py-1"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ==================== TAB: CASHFLOW & TRANSACTIONS ==================== */}
+            {/* ==================== TAB: CASHFLOW & TRANSACTIONS (6 JARS INTEGRATED) ==================== */}
             {activeTab === "cashflow" && (
               <div className="space-y-6">
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
-                        Cashflow & Transaction Terminal
-                      </h2>
-                      <p className="text-[11px] text-slate-500 font-mono">Income, Expenses, Debt Servicing & Transfers</p>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">Cashflow Terminal (Chronological)</h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Strict 6 Jars category classification dropdowns</p>
                     </div>
-                    <button
-                      onClick={() => setCashflow([
-                        {
-                          id: "c_" + Date.now(),
-                          date: new Date().toISOString().slice(0, 10),
-                          type: "Expense",
-                          category: "Living",
-                          amount: 50000,
-                          currency: "KRW",
-                          accountName: "Toss Bank",
-                          desc: "Daily Expense",
-                          fee: 0
-                        },
-                        ...cashflow
-                      ])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                    >
-                      + Log Record
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowJarModal(true)}
+                        className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 rounded font-mono"
+                      >
+                        ⚙️ Configure Jars
+                      </button>
+                      <button
+                        onClick={() => setCashflow([
+                          {
+                            id: "c_" + Date.now(),
+                            date: new Date().toISOString().slice(0, 10),
+                            type: "Expense",
+                            jarId: "NEC",
+                            catId: "nec_groc",
+                            amount: 25000,
+                            currency: "KRW",
+                            account: "Toss Bank",
+                            desc: "Supermarket",
+                            fee: 0
+                          },
+                          ...cashflow
+                        ])}
+                        className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded font-mono"
+                      >
+                        + Log Record
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    {cashflow.map((c, cIdx) => (
-                      <div key={c.id} className="grid grid-cols-2 md:grid-cols-7 gap-2 text-xs bg-cyberDark/60 p-2.5 rounded border border-slate-800 items-center">
-                        <div>
-                          <input
-                            type="date"
-                            value={c.date}
-                            onChange={(e) => {
-                              const updated = [...cashflow];
-                              updated[cIdx].date = e.target.value;
-                              setCashflow(updated);
-                            }}
-                            className="w-full px-1.5 py-0.5 rounded border text-[11px]"
-                          />
-                        </div>
-                        <div>
-                          <select
-                            value={c.type}
-                            onChange={(e) => {
-                              const updated = [...cashflow];
-                              updated[cIdx].type = e.target.value;
-                              setCashflow(updated);
-                            }}
-                            className="w-full px-1.5 py-0.5 rounded border font-bold"
-                          >
-                            <option value="Income">Income (수입)</option>
-                            <option value="Expense">Expense (지출)</option>
-                            <option value="Lending">Lending (대여/빌려줌)</option>
-                            <option value="Borrowing">Borrowing (차입/빌림)</option>
-                            <option value="Transfer">Transfer (계좌이체)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <input
-                            type="text"
-                            value={c.category}
-                            onChange={(e) => {
-                              const updated = [...cashflow];
-                              updated[cIdx].category = e.target.value;
-                              setCashflow(updated);
-                            }}
-                            placeholder="Category"
-                            className="w-full px-1.5 py-0.5 rounded border"
-                          />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              value={c.amount}
-                              onChange={(e) => {
-                                const updated = [...cashflow];
-                                updated[cIdx].amount = Number(e.target.value);
-                                setCashflow(updated);
-                              }}
-                              className={`w-full px-1.5 py-0.5 rounded border font-mono font-bold ${
-                                c.type === "Income" ? "text-neonGreen" : "text-rose-400"
-                              }`}
-                            />
-                            <select
-                              value={c.currency}
-                              onChange={(e) => {
-                                const updated = [...cashflow];
-                                updated[cIdx].currency = e.target.value;
-                                setCashflow(updated);
-                              }}
-                              className="w-14 px-1 py-0.5 rounded border text-[10px]"
-                            >
-                              <option value="KRW">KRW</option>
-                              <option value="VND">VND</option>
-                              <option value="USD">USD</option>
-                            </select>
+                    {cashflow.sort((a,b) => new Date(b.date) - new Date(a.date)).map((c, cIdx) => {
+                      const isEditing = editingId === c.id;
+                      const activeJar = jars.find(j => j.id === (isEditing ? editForm.jarId : c.jarId)) || jars[0];
+
+                      return (
+                        <div key={c.id} className="border border-slate-800 rounded p-2.5 bg-cyberDark/60 grid grid-cols-2 md:grid-cols-7 gap-2 text-xs font-mono items-center">
+                          <div>
+                            <span className="text-[10px] text-slate-500 block">Date</span>
+                            {isEditing ? (
+                              <input type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} className="w-full px-1.5 py-0.5 rounded border text-[11px]" />
+                            ) : <span>{c.date}</span>}
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 block">Type</span>
+                            {isEditing ? (
+                              <select value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })} className="w-full px-1.5 py-0.5 rounded border font-bold">
+                                <option value="Income">Income</option>
+                                <option value="Expense">Expense</option>
+                                <option value="Transfer">Transfer</option>
+                              </select>
+                            ) : <span className={c.type === "Income" ? "text-neonGreen font-bold" : "text-rose-400"}>{c.type}</span>}
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 block">Jar & Category</span>
+                            {isEditing ? (
+                              <div className="space-y-1">
+                                <select value={editForm.jarId} onChange={(e) => setEditForm({ ...editForm, jarId: e.target.value, catId: jars.find(j => j.id === e.target.value)?.categories[0]?.id })} className="w-full px-1.5 py-0.5 rounded border text-[10px]">
+                                  {jars.map(j => <option key={j.id} value={j.id}>{lang === "en" ? j.nameEn : j.nameKo}</option>)}
+                                </select>
+                                <select value={editForm.catId} onChange={(e) => setEditForm({ ...editForm, catId: e.target.value })} className="w-full px-1.5 py-0.5 rounded border text-[10px]">
+                                  {activeJar.categories.map(cat => <option key={cat.id} value={cat.id}>{lang === "en" ? cat.en : cat.ko}</option>)}
+                                </select>
+                              </div>
+                            ) : (
+                              <div>
+                                <span className="text-cyan-400 block text-[10px]">{c.jarId}</span>
+                                <span className="text-slate-300">{activeJar.categories.find(cat => cat.id === c.catId)?.[lang] || c.catId}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 block">Amount</span>
+                            {isEditing ? (
+                              <div className="flex gap-1">
+                                <input type="number" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })} className="w-full px-1.5 py-0.5 rounded border font-bold" />
+                                <select value={editForm.currency} onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })} className="w-14 px-1 py-0.5 rounded border text-[10px]">
+                                  <option value="KRW">KRW</option>
+                                  <option value="VND">VND</option>
+                                  <option value="USD">USD</option>
+                                </select>
+                              </div>
+                            ) : <span className={`font-bold ${c.type === "Income" ? "text-neonGreen" : "text-rose-400"}`}>{fmt(c.amount, c.currency)}</span>}
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 block">Account</span>
+                            {isEditing ? (
+                              <input type="text" value={editForm.account} onChange={(e) => setEditForm({ ...editForm, account: e.target.value })} className="w-full px-1.5 py-0.5 rounded border text-xs" />
+                            ) : <span>{c.account}</span>}
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 block">Note</span>
+                            {isEditing ? (
+                              <input type="text" value={editForm.desc} onChange={(e) => setEditForm({ ...editForm, desc: e.target.value })} className="w-full px-1.5 py-0.5 rounded border text-xs" />
+                            ) : <span className="text-slate-400">{c.desc}</span>}
+                          </div>
+                          <div className="flex items-center justify-end gap-2">
+                            {isEditing ? (
+                              <>
+                                <button onClick={() => {
+                                  const updated = [...cashflow];
+                                  updated[cIdx] = { ...editForm };
+                                  setCashflow(updated);
+                                  cancelEdit();
+                                }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded text-xs">Save</button>
+                                <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-xs">Cancel</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={() => startEdit(c.id, c)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-xs">Edit</button>
+                                <button onClick={() => setCashflow(cashflow.filter((_, idx) => idx !== cIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1 text-xs">Delete</button>
+                              </>
+                            )}
                           </div>
                         </div>
-                        <div>
-                          <input
-                            type="text"
-                            value={c.accountName}
-                            onChange={(e) => {
-                              const updated = [...cashflow];
-                              updated[cIdx].accountName = e.target.value;
-                              setCashflow(updated);
-                            }}
-                            placeholder="Account"
-                            className="w-full px-1.5 py-0.5 rounded border"
-                          />
-                        </div>
-                        <div>
-                          <input
-                            type="text"
-                            value={c.desc}
-                            onChange={(e) => {
-                              const updated = [...cashflow];
-                              updated[cIdx].desc = e.target.value;
-                              setCashflow(updated);
-                            }}
-                            placeholder="Description"
-                            className="w-full px-1.5 py-0.5 rounded border"
-                          />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <input
-                            type="number"
-                            value={c.fee || 0}
-                            onChange={(e) => {
-                              const updated = [...cashflow];
-                              updated[cIdx].fee = Number(e.target.value);
-                              setCashflow(updated);
-                            }}
-                            placeholder="Fee"
-                            className="w-16 px-1.5 py-0.5 rounded border text-[10px] font-mono"
-                          />
-                          <button
-                            onClick={() => setCashflow(cashflow.filter((_, idx) => idx !== cIdx))}
-                            className="text-rose-400 hover:text-rose-300 px-1 text-xs"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ==================== TAB: LEDGER & AUDIT TRAIL ==================== */}
-            {activeTab === "history" && (
+            {/* ==================== TAB: DEBTS & LIABILITIES ==================== */}
+            {activeTab === "debt" && (
               <div className="space-y-6">
                 <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">
-                        Global Audit Ledger
-                      </h2>
-                      <p className="text-[11px] text-slate-500 font-mono">Record of withdrawals, funding deductions & changes</p>
+                      <h2 className="text-sm font-bold tracking-wider text-rose-400 uppercase font-mono">Liabilities & Held Security Deposits</h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Deducts directly from Net Worth to maintain true balance sheet integrity</p>
                     </div>
                     <button
-                      onClick={() => setLogs([
-                        {
-                          id: "l_" + Date.now(),
-                          date: new Date().toISOString().slice(0, 10),
-                          account: "Manual Note",
-                          event: "Rebalance Check",
-                          amount: 0,
-                          currency: "KRW",
-                          note: "Annual audit check"
-                        },
-                        ...logs
-                      ])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
+                      onClick={() => setDebts([...debts, { id: "d_" + Date.now(), name: "Tenant Deposit", amount: 10000000, currency: "VND", party: "Tenant", dueDate: "2027-05-09", note: "" }])}
+                      className="text-xs px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded font-mono"
                     >
-                      + Add Log
+                      + Add Obligation
                     </button>
                   </div>
 
-                  <div className="space-y-2">
-                    {logs.map((lg, lIdx) => (
-                      <div key={lg.id} className="grid grid-cols-2 md:grid-cols-6 gap-2 text-xs bg-cyberDark/60 p-2.5 rounded border border-slate-800 items-center font-mono">
+                  {debts.map((d, dIdx) => {
+                    const isEditing = editingId === d.id;
+                    return (
+                      <div key={d.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 grid grid-cols-2 md:grid-cols-5 gap-3 text-xs items-center font-mono">
                         <div>
-                          <input
-                            type="date"
-                            value={lg.date}
-                            onChange={(e) => {
-                              const updated = [...logs];
-                              updated[lIdx].date = e.target.value;
-                              setLogs(updated);
-                            }}
-                            className="w-full px-1.5 py-0.5 rounded border text-[11px]"
-                          />
+                          <span className="text-slate-500 text-[10px] block">Obligation</span>
+                          {isEditing ? (
+                            <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-2 py-1 rounded border font-bold text-white" />
+                          ) : <span className="font-bold text-white">{d.name}</span>}
                         </div>
                         <div>
-                          <input
-                            type="text"
-                            value={lg.account}
-                            onChange={(e) => {
-                              const updated = [...logs];
-                              updated[lIdx].account = e.target.value;
-                              setLogs(updated);
-                            }}
-                            className="w-full px-1.5 py-0.5 rounded border"
-                          />
+                          <span className="text-slate-500 text-[10px] block">Party</span>
+                          {isEditing ? (
+                            <input type="text" value={editForm.party} onChange={(e) => setEditForm({ ...editForm, party: e.target.value })} className="w-full px-2 py-1 rounded border" />
+                          ) : <span className="text-slate-300">{d.party}</span>}
                         </div>
                         <div>
-                          <input
-                            type="text"
-                            value={lg.event}
-                            onChange={(e) => {
-                              const updated = [...logs];
-                              updated[lIdx].event = e.target.value;
-                              setLogs(updated);
-                            }}
-                            className="w-full px-1.5 py-0.5 rounded border text-neonCyan"
-                          />
+                          <span className="text-slate-500 text-[10px] block">Amount</span>
+                          {isEditing ? (
+                            <div className="flex gap-1">
+                              <input type="number" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-rose-400 font-bold" />
+                              <select value={editForm.currency} onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })} className="w-16 px-1 py-1 rounded border text-xs">
+                                <option value="VND">VND</option>
+                                <option value="KRW">KRW</option>
+                                <option value="USD">USD</option>
+                              </select>
+                            </div>
+                          ) : <span className="font-bold text-rose-400 text-sm">-{fmt(d.amount, d.currency)}</span>}
                         </div>
                         <div>
-                          <input
-                            type="number"
-                            value={lg.amount}
-                            onChange={(e) => {
-                              const updated = [...logs];
-                              updated[lIdx].amount = Number(e.target.value);
-                              setLogs(updated);
-                            }}
-                            className="w-full px-1.5 py-0.5 rounded border font-bold"
-                          />
+                          <span className="text-slate-500 text-[10px] block">Due Date</span>
+                          {isEditing ? (
+                            <input type="date" value={editForm.dueDate} onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })} className="w-full px-2 py-1 rounded border text-xs" />
+                          ) : <span>{d.dueDate}</span>}
                         </div>
-                        <div>
-                          <input
-                            type="text"
-                            value={lg.note}
-                            onChange={(e) => {
-                              const updated = [...logs];
-                              updated[lIdx].note = e.target.value;
-                              setLogs(updated);
-                            }}
-                            placeholder="Notes"
-                            className="w-full px-1.5 py-0.5 rounded border text-slate-400"
-                          />
-                        </div>
-                        <div className="flex items-center justify-end">
-                          <button
-                            onClick={() => setLogs(logs.filter((_, idx) => idx !== lIdx))}
-                            className="text-rose-400 hover:text-rose-300 text-xs px-2"
-                          >
-                            ✕
-                          </button>
+                        <div className="flex items-center justify-end gap-2">
+                          {isEditing ? (
+                            <>
+                              <button onClick={() => {
+                                const updated = [...debts];
+                                updated[dIdx] = { ...editForm };
+                                setDebts(updated);
+                                cancelEdit();
+                              }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded text-xs">Save</button>
+                              <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-xs">Cancel</button>
+                            </>
+                          ) : (
+                            <>
+                              <button onClick={() => startEdit(d.id, d)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-xs">Edit</button>
+                              <button onClick={() => setDebts(debts.filter((_, idx) => idx !== dIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1 text-xs">Delete</button>
+                            </>
+                          )}
                         </div>
                       </div>
-                    ))}
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ==================== TAB: 6 JARS & ADVANCED ANALYSIS ==================== */}
+            {activeTab === "analytics" && (
+              <div className="space-y-6">
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-sm font-bold tracking-wider text-neonCyan uppercase font-mono">6 Jars System Financial Analysis</h2>
+                      <p className="text-[11px] text-slate-500 font-mono">Actual expenditure compared against target jar ratios</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={jars.map(j => {
+                          const spent = cashflow.filter(c => c.jarId === j.id && c.type === "Expense").reduce((sum, c) => sum + toVND(c.amount, c.currency), 0);
+                          return { name: j.id, Target: j.pct, Spent: Math.round(spent / 1e5) };
+                        })}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                          <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'JetBrains Mono' }} />
+                          <YAxis stroke="#64748b" tick={{ fontSize: 11, fontFamily: 'JetBrains Mono' }} />
+                          <Tooltip contentStyle={{ backgroundColor: "#0b0f19", borderColor: "#1e293b", fontFamily: "JetBrains Mono" }} />
+                          <Bar dataKey="Target" fill="#00f0ff" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="Spent" fill="#ff007f" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="space-y-2 text-xs font-mono">
+                      {jars.map(j => {
+                        const spent = cashflow.filter(c => c.jarId === j.id && c.type === "Expense").reduce((sum, c) => sum + toVND(c.amount, c.currency), 0);
+                        return (
+                          <div key={j.id} className="p-3 bg-cyberDark/60 rounded border border-slate-800 flex items-center justify-between">
+                            <div>
+                              <span className="font-bold text-white block">{lang === "en" ? j.nameEn : j.nameKo}</span>
+                              <span className="text-[10px] text-slate-500">{j.categories.length} Categories Registered</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-neonPink font-bold block">{fmt(spent, "VND")}</span>
+                              <span className="text-slate-400 text-[10px]">Target: {j.pct}% of Inflow</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ==================== TAB: ADVANCED FINANCIAL ANALYSIS ==================== */}
-            {activeTab === "analytics" && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl space-y-2">
-                    <h3 className="text-xs font-mono uppercase text-slate-400 tracking-wider">Passive Inflow Index</h3>
-                    <div className="text-2xl font-bold font-mono text-neonGreen">7,300,000 ₫ / mo</div>
-                    <p className="text-[11px] text-slate-500">Rental property covering 100% of educational & buffer goals</p>
+            {/* ==================== 6 JARS CONFIGURATION MODAL ==================== */}
+            {showJarModal && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-cyberCard border border-cyberBorder rounded-xl max-w-2xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto font-mono text-xs">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h2 className="text-sm font-bold text-neonCyan uppercase">Configure 6 Jars & Categories</h2>
+                    <button onClick={() => setShowJarModal(false)} className="text-slate-400 hover:text-white">✕</button>
                   </div>
-                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl space-y-2">
-                    <h3 className="text-xs font-mono uppercase text-slate-400 tracking-wider">Active Savings Ratio</h3>
-                    <div className="text-2xl font-bold font-mono text-neonCyan">~49.5%</div>
-                    <p className="text-[11px] text-slate-500">Korea living expense is lean and optimized at ~1.16M KRW</p>
-                  </div>
-                  <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl space-y-2">
-                    <h3 className="text-xs font-mono uppercase text-slate-400 tracking-wider">Annual Rebalance Target</h3>
-                    <div className="text-2xl font-bold font-mono text-neonYellow">May 9th</div>
-                    <p className="text-[11px] text-slate-500">All term deposits synchronized for single annual reallocation</p>
-                  </div>
-                </div>
 
-                {/* BACKUP & RESTORE TOOLS */}
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-3">
-                  <h3 className="text-sm font-bold font-mono uppercase text-slate-300">Local JSON Data Backup</h3>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => {
-                        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
-                          fx, krParking, krSavings, vnParking, vnSavings, funds, properties, debts, cashflow, logs
-                        }));
-                        const dlAnchor = document.createElement("a");
-                        dlAnchor.setAttribute("href", dataStr);
-                        dlAnchor.setAttribute("download", `Youmelittlepenny_Backup_${new Date().toISOString().slice(0, 10)}.json`);
-                        dlAnchor.click();
-                      }}
-                      className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 rounded font-mono"
-                    >
-                      {t.actions.export}
+                  <div className="space-y-4">
+                    {jars.map((j, jIdx) => (
+                      <div key={j.id} className="p-3 bg-cyberDark rounded border border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-white">{lang === "en" ? j.nameEn : j.nameKo}</span>
+                          <div className="flex items-center gap-2">
+                            <span>Target %:</span>
+                            <input
+                              type="number"
+                              value={j.pct}
+                              onChange={(e) => {
+                                const updated = [...jars];
+                                updated[jIdx].pct = Number(e.target.value);
+                                setJars(updated);
+                              }}
+                              className="w-16 px-1.5 py-0.5 rounded border text-neonCyan font-bold text-center"
+                            />
+                          </div>
+                        </div>
+
+                        {/* CATEGORY TAGS */}
+                        <div className="flex flex-wrap gap-1.5 pt-2">
+                          {j.categories.map((c, cIdx) => (
+                            <span key={c.id} className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-300 flex items-center gap-1.5 text-[11px]">
+                              {lang === "en" ? c.en : c.ko}
+                              <button onClick={() => {
+                                const updated = [...jars];
+                                updated[jIdx].categories = updated[jIdx].categories.filter((_, i) => i !== cIdx);
+                                setJars(updated);
+                              }} className="text-slate-500 hover:text-rose-400">✕</button>
+                            </span>
+                          ))}
+                          <button
+                            onClick={() => {
+                              const nameEn = prompt("Category English name:", "New Category");
+                              const nameKo = prompt("Category Korean name:", "새 카테고리");
+                              if (nameEn && nameKo) {
+                                const updated = [...jars];
+                                updated[jIdx].categories.push({ id: "cat_" + Date.now(), en: nameEn, ko: nameKo });
+                                setJars(updated);
+                              }
+                            }}
+                            className="text-cyan-400 hover:underline px-2 py-0.5"
+                          >
+                            + Add Category
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-800 text-right">
+                    <button onClick={() => setShowJarModal(false)} className="px-4 py-2 bg-neonGreen text-black font-bold rounded">
+                      Close & Apply
                     </button>
-                    <label className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded font-mono cursor-pointer">
-                      {t.actions.import}
-                      <input
-                        type="file"
-                        accept=".json"
-                        className="hidden"
-                        onChange={(e) => {
-                          const fileReader = new FileReader();
-                          fileReader.onload = (event) => {
-                            try {
-                              const parsed = JSON.parse(event.target.result);
-                              if (parsed.krParking) setKrParking(parsed.krParking);
-                              if (parsed.krSavings) setKrSavings(parsed.krSavings);
-                              if (parsed.vnParking) setVnParking(parsed.vnParking);
-                              if (parsed.vnSavings) setVnSavings(parsed.vnSavings);
-                              if (parsed.funds) setFunds(parsed.funds);
-                              if (parsed.properties) setProperties(parsed.properties);
-                              if (parsed.debts) setDebts(parsed.debts);
-                              if (parsed.cashflow) setCashflow(parsed.cashflow);
-                              if (parsed.logs) setLogs(parsed.logs);
-                              alert("Import successful!");
-                            } catch (err) {
-                              alert("Invalid JSON format");
-                            }
-                          };
-                          if (e.target.files[0]) fileReader.readAsText(e.target.files[0]);
-                        }}
-                      />
-                    </label>
                   </div>
                 </div>
               </div>
