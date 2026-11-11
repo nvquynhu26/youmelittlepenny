@@ -2,7 +2,7 @@ const { useState, useEffect, useMemo } = React;
 
 // --- CONFIGURATION & PLACEHOLDERS ---
 // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE:
-const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbxYOUR_SCRIPT_ID/exec";
+const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwQz1PyeKueLdjmxfcvU7wyK57LHjdwpVmyDADi3v5FuUwG74g9oVO57pfnZl_C_p1ppw/exec";
 const ACCESS_PASSWORD = "$1Million";
 
 // --- LOCALIZATION DICTIONARY ---
