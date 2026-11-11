@@ -1,1692 +1,732 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Youmelittlepenny</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            cyberDark: '#05070a',
-            cyberCard: '#0b0f19',
-            cyberBorder: '#1e293b',
-            neonGreen: '#00ff66',
-            neonCyan: '#00f0ff',
-            neonPink: '#ff007f',
-            neonYellow: '#ffe600'
-          }
-        }
-      }
-    }
-  </script>
-
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asset & Net Worth Management System</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { background-color: #05070a; color: #f1f5f9; font-family: 'Inter', sans-serif; }
-    .neon-text-green { text-shadow: 0 0 10px rgba(0, 255, 102, 0.4); }
-    .neon-text-cyan { text-shadow: 0 0 10px rgba(0, 240, 255, 0.4); }
-    input, select, textarea {
-      background-color: #07090e !important;
-      border-color: #1e293b !important;
-      color: #f8fafc !important;
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #34d399;
+      --danger: #f87171;
     }
-    input:focus, select:focus, textarea:focus {
-      border-color: #00f0ff !important;
-      outline: none;
-      box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Malgun Gothic", sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; font-size: 13px; line-height: 1.4; }
+    .container { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+    
+    header { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 12px 20px; border-radius: 6px; border: 1px solid var(--border); }
+    .rates-bar { display: flex; gap: 16px; align-items: center; }
+    .rate-item { font-weight: 600; color: var(--accent); }
+    
+    .nav-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .tab-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 6px 16px; border-radius: 4px; cursor: pointer; }
+    .tab-btn.active { background: var(--accent); color: #000; font-weight: 600; border-color: var(--accent); }
+    
+    .view-panel { display: none; flex-direction: column; gap: 16px; }
+    .view-panel.active { display: flex; }
+    
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; }
+    .card-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    
+    .stat-box { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 4px; border: 1px solid var(--border); }
+    .stat-label { color: var(--text-muted); font-size: 11px; }
+    .stat-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+    
+    table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 8px; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-muted); font-weight: 600; background: rgba(0,0,0,0.15); font-size: 12px; }
+    
+    input, select { background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 6px 8px; border-radius: 4px; outline: none; width: 100%; font-size: 12px; }
+    input:focus, select:focus { border-color: var(--accent); }
+    .btn { background: var(--accent); color: #000; font-weight: 600; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    
+    .flex-row { display: flex; gap: 8px; align-items: center; }
+    .chart-container { height: 280px; position: relative; }
   </style>
 </head>
 <body>
-  <div id="root"></div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
-
-    // ==========================================
-    // ⚙️ GAS DEPLOYMENT WEBAPP URL
-    // ==========================================
-    const GOOGLE_APPS_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzP7xhlbrMqSy_7ZrVNDNSh9drGYFGc3WVQZEF1ZVcF21DjLThvLYjyEBAjHvOh2AOm4Q/exec";
-
-    const DEFAULT_JARS = [
-      {
-        id: "NEC",
-        pct: 55,
-        nameEn: "NEC (Necessities)",
-        nameKo: "생활비 / 필수지출",
-        categories: [
-          { id: "nec_rent", en: "Rent / Housing", ko: "주거비 / 월세" },
-          { id: "nec_util", en: "Utilities", ko: "공과금 (수도·광열·관리비)" },
-          { id: "nec_groc", en: "Groceries", ko: "식비 / 장보기" },
-          { id: "nec_dine", en: "Daily Dining", ko: "외식비" },
-          { id: "nec_tran", en: "Transportation", ko: "교통비" },
-          { id: "nec_tele", en: "Phone / Telecom", ko: "통신비" },
-          { id: "nec_insu", en: "Insurance", ko: "보험료" },
-          { id: "nec_heal", en: "Healthcare", ko: "의료비" }
-        ]
-      },
-      {
-        id: "LTSS",
-        pct: 10,
-        nameEn: "LTSS (Long-term Savings)",
-        nameKo: "장기저축 / 목돈마련",
-        categories: [
-          { id: "lts_emg", en: "Emergency Fund", ko: "비상금" },
-          { id: "lts_maj", en: "Major Purchases", ko: "대형지출 적립" },
-          { id: "lts_rain", en: "Rainy-day Savings", ko: "예비비" }
-        ]
-      },
-      {
-        id: "EDU",
-        pct: 10,
-        nameEn: "EDU (Education)",
-        nameKo: "자기계발 / 교육비",
-        categories: [
-          { id: "edu_tui", en: "Courses / Tuition", ko: "강의료 / 학비" },
-          { id: "edu_book", en: "Books / Resources", ko: "도서구입비" },
-          { id: "edu_lang", en: "Language Learning", ko: "어학학습비" },
-          { id: "edu_tool", en: "Seminars / Tools", ko: "세미나 / 학습툴" }
-        ]
-      },
-      {
-        id: "FFA",
-        pct: 10,
-        nameEn: "FFA (Financial Freedom)",
-        nameKo: "재테크 / 투자",
-        categories: [
-          { id: "ffa_stk", en: "Stocks / ETFs", ko: "주식 / ETF" },
-          { id: "ffa_pen", en: "Retirement / Pension", ko: "연금 / IRP" },
-          { id: "ffa_gro", en: "Growth Investments", ko: "투자원금" }
-        ]
-      },
-      {
-        id: "PLAY",
-        pct: 10,
-        nameEn: "PLAY (Play)",
-        nameKo: "문화·여가 / 플렉스",
-        categories: [
-          { id: "ply_cafe", en: "Cafés & Socializing", ko: "카페 / 사교" },
-          { id: "ply_ent", en: "Hobbies & Entertainment", ko: "취미 / 문화생활" },
-          { id: "ply_trav", en: "Travel / Vacations", ko: "여행 / 휴가" },
-          { id: "ply_shop", en: "Personal Shopping", ko: "쇼핑 / 기분전환" }
-        ]
-      },
-      {
-        id: "GIVE",
-        pct: 5,
-        nameEn: "GIVE (Give)",
-        nameKo: "기부 / 경조사",
-        categories: [
-          { id: "giv_dona", en: "Donations / Charity", ko: "기부금 / 후원" },
-          { id: "giv_fam", en: "Family & Gifts", ko: "가족용돈 / 선물" },
-          { id: "giv_soc", en: "Social Obligations", ko: "경조사비" }
-        ]
-      }
-    ];
-
-    const KOREA_BANKS = ["Toss Bank", "KakaoBank", "Kookmin KB", "Shinhan", "Hana", "Woori", "K-Bank"];
-    const VN_BANKS = ["MBBank", "Techcombank", "Vietcombank", "VPBank", "ACB", "TPBank"];
-    const VN_FIXED_TERMS = ["1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "12M", "18M", "24M", "36M"];
-    const VN_FLEX_TERMS = ["6M", "7M", "8M", "9M", "10M", "11M", "12M", "18M", "24M", "36M"];
-
-    function App() {
-      const [authed, setAuthed] = useState(() => sessionStorage.getItem("auth_pass") === "$1Million");
-      const [passInput, setPassInput] = useState("");
-      const [lang, setLang] = useState("en");
-      const [activeTab, setActiveTab] = useState("dash");
-      const [syncStatus, setSyncStatus] = useState("idle");
-
-      // Row edit lock
-      const [editingId, setEditingId] = useState(null);
-      const [editForm, setEditForm] = useState({});
-
-      // Live exchange rates
-      const [fx, setFx] = useState({ USD_KRW: 1385, USD_VND: 25420, KRW_VND: 18.35 });
-
-      useEffect(() => {
-        async function fetchRates() {
-          try {
-            const res = await fetch("https://open.er-api.com/v6/latest/USD");
-            const data = await res.json();
-            if (data && data.rates) {
-              const u_krw = data.rates.KRW || 1385;
-              const u_vnd = data.rates.VND || 25420;
-              setFx({
-                USD_KRW: Math.round(u_krw * 100) / 100,
-                USD_VND: Math.round(u_vnd),
-                KRW_VND: Math.round((u_vnd / u_krw) * 100) / 100
-              });
-            }
-          } catch (e) {
-            console.warn("Using offline FX fallback", e);
-          }
-        }
-        fetchRates();
-      }, []);
-
-      // 6 Jars state
-      const [jars, setJars] = useState(() => {
-        const saved = localStorage.getItem("pen_jars");
-        return saved ? JSON.parse(saved) : DEFAULT_JARS;
-      });
-      const [showJarModal, setShowJarModal] = useState(false);
-
-      // KOREA STATE
-      const [krParking, setKrParking] = useState(() => {
-        const s = localStorage.getItem("pen_kr_parking");
-        return s ? JSON.parse(s) : [
-          { id: "kp1", bank: "Toss Bank", name: "Main Parking", balance: 500000, rate: 2.0, subPots: [{ id: "sp1", name: "Savings Spillover", balance: 75000 }] }
-        ];
-      });
-
-      const [krSavings, setKrSavings] = useState(() => {
-        const s = localStorage.getItem("pen_kr_savings");
-        return s ? JSON.parse(s) : [
-          {
-            id: "ks1",
-            bank: "Hana",
-            name: "Fixed Deposit",
-            type: "yegeum",
-            principal: 9000000,
-            currentPrincipal: 9000000,
-            rate: 3.0,
-            taxRate: 15.4,
-            startDate: "2026-05-09",
-            maturityDate: "2027-05-09",
-            deposits: [],
-            earlyWithdrawals: []
-          },
-          {
-            id: "ks2",
-            bank: "Toss Bank",
-            name: "Study Fund",
-            type: "jeokgeum",
-            principal: 865000,
-            currentPrincipal: 865000,
-            rate: 1.4,
-            taxRate: 15.4,
-            startDate: "2026-01-01",
-            maturityDate: "2027-05-09",
-            deposits: [
-              { id: "kd1", date: "2026-10-01", amount: 150000, source: "Toss Parking", mode: "Auto" },
-              { id: "kd2", date: "2026-11-01", amount: 150000, source: "Toss Parking", mode: "Auto" }
-            ],
-            earlyWithdrawals: []
-          }
-        ];
-      });
-
-      // VIETNAM STATE
-      const [vnParking, setVnParking] = useState(() => {
-        const s = localStorage.getItem("pen_vn_parking");
-        return s ? JSON.parse(s) : [
-          { id: "vp1", bank: "MBBank", name: "Spending Account", balance: 3000000, rate: 0.2 }
-        ];
-      });
-
-      const [vnSavings, setVnSavings] = useState(() => {
-        const s = localStorage.getItem("pen_vn_savings");
-        return s ? JSON.parse(s) : [
-          {
-            id: "vs1",
-            bank: "MBBank",
-            name: "Fixed Term Annual",
-            type: "fixed",
-            term: "12M",
-            principal: 7000000,
-            currentPrincipal: 7000000,
-            rate: 4.3,
-            startDate: "2026-05-09",
-            maturityDate: "2027-05-09",
-            deposits: []
-          },
-          {
-            id: "vs2",
-            bank: "MBBank",
-            name: "Flexible Goal Deposit",
-            type: "flexible",
-            term: "12M",
-            principal: 14000000,
-            currentPrincipal: 14000000,
-            rate: 6.2,
-            startDate: "2026-05-09",
-            maturityDate: "2027-05-09",
-            deposits: [
-              { id: "vd1", date: "2026-10-09", amount: 3500000, source: "MB Spending", mode: "Auto" },
-              { id: "vd2", date: "2026-11-09", amount: 3500000, source: "MB Spending", mode: "Manual" }
-            ]
-          }
-        ];
-      });
-
-      // MUTUAL FUNDS (TIERED BY TICKER WITH PURCHASE HISTORY)
-      const [funds, setFunds] = useState(() => {
-        const s = localStorage.getItem("pen_funds_tiered");
-        return s ? JSON.parse(s) : [
-          {
-            ticker: "MBBOND",
-            currentNav: 22450,
-            purchases: [
-              { id: "p_b1", date: "2026-09-01", units: 22.72, buyPrice: 22000, source: "MB Spending" },
-              { id: "p_b2", date: "2026-10-01", units: 22.50, buyPrice: 22200, source: "MB Spending" }
-            ]
-          },
-          {
-            ticker: "MBVF",
-            currentNav: 15300,
-            purchases: [
-              { id: "p_v1", date: "2026-10-15", units: 33.33, buyPrice: 15000, source: "MB Spending" }
-            ]
-          }
-        ];
-      });
-
-      // REAL ESTATE / PROPERTIES
-      const [properties, setProperties] = useState(() => {
-        const s = localStorage.getItem("pen_properties");
-        return s ? JSON.parse(s) : [
-          { id: "pr1", name: "Apartment (95% Paid)", type: "Real Estate", address: "Ho Chi Minh City", buyDate: "2024-01-10", valuation: 2000000000, currency: "VND", fundedFrom: "None" },
-          { id: "pr2", name: "Housing Key Deposit", type: "Deposit", address: "Seoul, Korea", buyDate: "2024-05-01", valuation: 8000000, currency: "KRW", fundedFrom: "None" }
-        ];
-      });
-
-      // DEBTS & LIABILITIES
-      const [debts, setDebts] = useState(() => {
-        const s = localStorage.getItem("pen_debts");
-        return s ? JSON.parse(s) : [
-          { id: "d1", name: "Tenant Deposit (Refundable)", amount: 14000000, currency: "VND", party: "Tenant Room 102", dueDate: "2027-05-09" }
-        ];
-      });
-
-      // CASHFLOW & TIMELINE
-      const [cashflow, setCashflow] = useState(() => {
-        const s = localStorage.getItem("pen_cashflow");
-        return s ? JSON.parse(s) : [
-          { id: "c1", date: "2026-11-01", type: "Income", jarId: "FFA", catId: "ffa_gro", amount: 2414477, currency: "KRW", account: "Toss Bank", desc: "Design Studio Seoul" },
-          { id: "c2", date: "2026-11-01", type: "Income", jarId: "FFA", catId: "ffa_gro", amount: 7300000, currency: "VND", account: "MBBank", desc: "Apartment Rental" },
-          { id: "c3", date: "2026-11-05", type: "Expense", jarId: "EDU", catId: "edu_lang", amount: 3300000, currency: "VND", account: "MBBank", desc: "Spanish Class" },
-          { id: "c4", date: "2026-11-05", type: "Expense", jarId: "NEC", catId: "nec_rent", amount: 1164000, currency: "KRW", account: "Toss Bank", desc: "Seoul Rent & Living" }
-        ];
-      });
-
-      // Filters for Cashflow tab
-      const [cfFilterType, setCfFilterType] = useState("ALL");
-      const [cfTimeframe, setCfTimeframe] = useState("MONTH");
-
-      // Save states
-      useEffect(() => { localStorage.setItem("pen_jars", JSON.stringify(jars)); }, [jars]);
-      useEffect(() => { localStorage.setItem("pen_kr_parking", JSON.stringify(krParking)); }, [krParking]);
-      useEffect(() => { localStorage.setItem("pen_kr_savings", JSON.stringify(krSavings)); }, [krSavings]);
-      useEffect(() => { localStorage.setItem("pen_vn_parking", JSON.stringify(vnParking)); }, [vnParking]);
-      useEffect(() => { localStorage.setItem("pen_vn_savings", JSON.stringify(vnSavings)); }, [vnSavings]);
-      useEffect(() => { localStorage.setItem("pen_funds_tiered", JSON.stringify(funds)); }, [funds]);
-      useEffect(() => { localStorage.setItem("pen_properties", JSON.stringify(properties)); }, [properties]);
-      useEffect(() => { localStorage.setItem("pen_debts", JSON.stringify(debts)); }, [debts]);
-      useEffect(() => { localStorage.setItem("pen_cashflow", JSON.stringify(cashflow)); }, [cashflow]);
-
-      // Conversions
-      const toVND = (v, c) => c === "VND" ? v : c === "KRW" ? v * fx.KRW_VND : v * fx.USD_VND;
-      const toKRW = (v, c) => c === "KRW" ? v : c === "VND" ? v / fx.KRW_VND : v * fx.USD_KRW;
-      const toUSD = (v, c) => c === "USD" ? v : c === "VND" ? v / fx.USD_VND : v / fx.USD_KRW;
-
-      const fmt = (v, c) => {
-        if (!v || isNaN(v)) return "0";
-        if (c === "VND") return Math.round(v).toLocaleString() + " ₫";
-        if (c === "KRW") return Math.round(v).toLocaleString() + " ₩";
-        if (c === "USD") return "$" + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        return Number(v).toLocaleString();
-      };
-
-      // Aggregates
-      const totals = useMemo(() => {
-        const krCash = krParking.reduce((sum, p) => sum + p.balance + (p.subPots || []).reduce((spSum, sp) => spSum + sp.balance, 0), 0);
-        const krDep = krSavings.reduce((sum, s) => sum + s.currentPrincipal, 0);
-        const totalKoreaVND = toVND(krCash + krDep, "KRW");
-
-        const vnCash = vnParking.reduce((sum, p) => sum + p.balance, 0);
-        const vnDep = vnSavings.reduce((sum, s) => sum + s.currentPrincipal, 0);
-        const totalVietnamVND = vnCash + vnDep;
-
-        let totalFundCost = 0;
-        let totalFundMarket = 0;
-        funds.forEach(f => {
-          (f.purchases || []).forEach(p => {
-            totalFundCost += p.units * p.buyPrice;
-            totalFundMarket += p.units * f.currentNav;
-          });
-        });
-
-        const totalPropVND = properties.reduce((sum, p) => sum + toVND(p.valuation, p.currency), 0);
-        const totalDebtVND = debts.reduce((sum, d) => sum + toVND(d.amount, d.currency), 0);
-
-        const assetsVND = totalKoreaVND + totalVietnamVND + totalFundMarket + totalPropVND;
-        const netVND = assetsVND - totalDebtVND;
-
-        return {
-          assetsVND,
-          debtVND: totalDebtVND,
-          netVND,
-          netKRW: toKRW(netVND, "VND"),
-          netUSD: toUSD(netVND, "VND"),
-          totalKoreaVND,
-          totalVietnamVND,
-          totalFundMarket,
-          totalFundCost,
-          totalPropVND,
-          categories4: [
-            { name: "Real Estate", val: totalPropVND, color: "#ffe600" },
-            { name: "Korea", val: totalKoreaVND, color: "#00f0ff" },
-            { name: "Vietnam", val: totalVietnamVND, color: "#00ff66" },
-            { name: "Funds", val: totalFundMarket, color: "#ff007f" }
-          ]
-        };
-      }, [krParking, krSavings, vnParking, vnSavings, funds, properties, debts, fx]);
-
-      // Cloud Sync
-      const triggerGoogleSync = async () => {
-        setSyncStatus("syncing");
-        try {
-          const payload = {
-            netWorthVND: totals.netVND,
-            netWorthKRW: totals.netKRW,
-            netWorthUSD: totals.netUSD,
-            transactions: cashflow,
-            sixJars: jars
-          };
-          await fetch(GOOGLE_APPS_SCRIPT_WEBAPP_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-          setSyncStatus("synced");
-          setTimeout(() => setSyncStatus("idle"), 3000);
-        } catch (e) {
-          setSyncStatus("fail");
-          setTimeout(() => setSyncStatus("idle"), 3000);
-        }
-      };
-
-      // Edit Locking
-      const startEdit = (id, obj) => {
-        setEditingId(id);
-        setEditForm({ ...obj });
-      };
-      const cancelEdit = () => {
-        setEditingId(null);
-        setEditForm({});
-      };
-
-      const TABS = {
-        dash: lang === "en" ? "Overview" : "대시보드",
-        korea: lang === "en" ? "Korea" : "한국 금융",
-        vietnam: lang === "en" ? "Vietnam" : "베트남 금융",
-        invest: lang === "en" ? "Funds" : "펀드 투자",
-        assets: lang === "en" ? "Property" : "실물 자산",
-        cashflow: lang === "en" ? "Cashflow" : "수지 기록",
-        debt: lang === "en" ? "Debts" : "부채 관리",
-        analytics: lang === "en" ? "Analysis" : "종합 분석"
-      };
-
-      if (!authed) {
-        return (
-          <div className="min-h-screen bg-cyberDark flex items-center justify-center p-4">
-            <div className="w-full max-w-sm bg-cyberCard border border-cyberBorder rounded-xl p-6 text-center shadow-2xl">
-              <h1 className="text-2xl font-black tracking-widest text-white mb-2">Youmelittlepenny</h1>
-              <p className="text-xs text-slate-400 mb-6 font-mono">Terminal Authentication</p>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                if (passInput === "$1Million") {
-                  sessionStorage.setItem("auth_pass", "$1Million");
-                  setAuthed(true);
-                } else alert("Access Denied");
-              }} className="space-y-4">
-                <input
-                  type="password"
-                  value={passInput}
-                  onChange={(e) => setPassInput(e.target.value)}
-                  placeholder="Passcode"
-                  className="w-full px-4 py-2.5 text-center text-lg rounded-lg border font-mono tracking-widest"
-                  autoFocus
-                />
-                <button type="submit" className="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-lg font-mono">
-                  Authenticate
-                </button>
-              </form>
-            </div>
-          </div>
-        );
-      }
-
-      return (
-        <div className="min-h-screen bg-cyberDark text-slate-200">
-          {/* HEADER */}
-          <header className="border-b border-cyberBorder bg-cyberCard/90 backdrop-blur sticky top-0 z-50 px-4 py-3">
-            <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-              <h1 className="text-xl font-black tracking-widest text-white">Youmelittlepenny</h1>
-
-              <div className="flex items-center gap-4 text-xs font-mono bg-cyberDark px-3 py-1.5 rounded-lg border border-slate-800">
-                <span className="w-2 h-2 rounded-full bg-neonGreen animate-pulse"></span>
-                <span>USD/KRW: <b className="text-neonCyan">{fx.USD_KRW}</b></span>
-                <span>USD/VND: <b className="text-neonCyan">{fx.USD_VND.toLocaleString()}</b></span>
-                <span>KRW/VND: <b className="text-neonCyan">{fx.KRW_VND}</b></span>
-              </div>
-
-              <div className="flex items-center gap-3 font-mono text-xs">
-                <button
-                  onClick={triggerGoogleSync}
-                  className={`px-3 py-1.5 rounded font-bold transition ${
-                    syncStatus === "syncing" ? "bg-amber-500 text-black animate-pulse" :
-                    syncStatus === "synced" ? "bg-neonGreen text-black" :
-                    syncStatus === "fail" ? "bg-rose-500 text-white" :
-                    "bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30"
-                  }`}
-                >
-                  {syncStatus === "syncing" ? "Syncing..." : syncStatus === "synced" ? "Synced" : syncStatus === "fail" ? "Sync Failed" : "Sync Drive"}
-                </button>
-
-                <div className="flex rounded border border-cyberBorder overflow-hidden">
-                  <button onClick={() => setLang("en")} className={`px-2 py-1 ${lang === "en" ? "bg-cyan-500 text-black font-bold" : "bg-slate-900 text-slate-400"}`}>EN</button>
-                  <button onClick={() => setLang("ko")} className={`px-2 py-1 ${lang === "ko" ? "bg-cyan-500 text-black font-bold" : "bg-slate-900 text-slate-400"}`}>KO</button>
-                </div>
-
-                <button onClick={() => { sessionStorage.clear(); setAuthed(false); }} className="text-rose-400 hover:text-rose-300 ml-1">✕</button>
-              </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto mt-3 pt-2 border-t border-slate-800 text-xs font-medium">
-              {Object.keys(TABS).map((k) => (
-                <button
-                  key={k}
-                  onClick={() => { setActiveTab(k); cancelEdit(); }}
-                  className={`px-3 py-1.5 rounded-t-md transition whitespace-nowrap ${
-                    activeTab === k ? "bg-cyberCard border-b-2 border-neonCyan text-neonCyan font-bold" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  {TABS[k]}
-                </button>
-              ))}
-            </div>
-          </header>
-
-          <main className="max-w-7xl mx-auto p-4 space-y-6">
-
-            {/* ==================== TAB: OVERVIEW ==================== */}
-            {activeTab === "dash" && (
-              <div className="space-y-6">
-                {/* NET WORTH HEADER CARD */}
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-6 relative">
-                  <div className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">{lang === "en" ? "Net Worth" : "순자산"}</div>
-                  <div className="text-3xl md:text-5xl font-black text-white neon-text-green font-mono mb-4">
-                    {fmt(totals.netVND, "VND")}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-6 text-sm font-mono pt-3 border-t border-slate-800">
-                    <div><span className="text-slate-500 text-xs block">KRW:</span><span className="text-neonCyan font-bold">{fmt(totals.netKRW, "KRW")}</span></div>
-                    <div><span className="text-slate-500 text-xs block">USD:</span><span className="text-neonYellow font-bold">{fmt(totals.netUSD, "USD")}</span></div>
-                    <div><span className="text-slate-500 text-xs block">{lang === "en" ? "Assets" : "총자산"}:</span><span className="text-slate-200">{fmt(totals.assetsVND, "VND")}</span></div>
-                    <div><span className="text-slate-500 text-xs block">{lang === "en" ? "Liabilities" : "부채"}:</span><span className="text-rose-400 font-bold">-{fmt(totals.debtVND, "VND")}</span></div>
-                  </div>
-                </div>
-
-                {/* HORIZONTAL STACKED BAR FOR THE 4 ASSET PILLARS */}
-                <div className="bg-cyberCard border border-cyberBorder p-5 rounded-xl space-y-4 font-mono">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold uppercase tracking-wider text-slate-400">Pillars Distribution (Korea / Vietnam / Real Estate / Funds)</span>
-                    <span className="text-slate-500">Total: {fmt(totals.assetsVND, "VND")}</span>
-                  </div>
-
-                  {/* The Horizontal Bar */}
-                  <div className="w-full h-8 bg-slate-900 rounded-lg overflow-hidden flex border border-slate-800">
-                    {totals.categories4.map((c, i) => {
-                      const pct = totals.assetsVND > 0 ? (c.val / totals.assetsVND) * 100 : 0;
-                      return (
-                        <div
-                          key={i}
-                          title={`${c.name}: ${pct.toFixed(1)}%`}
-                          style={{ width: `${pct}%`, backgroundColor: c.color }}
-                          className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-black font-bold overflow-hidden px-1"
-                        >
-                          {pct > 5 ? `${pct.toFixed(0)}%` : ""}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Legend */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs pt-2">
-                    {totals.categories4.map((c, i) => {
-                      const pct = totals.assetsVND > 0 ? (c.val / totals.assetsVND) * 100 : 0;
-                      return (
-                        <div key={i} className="flex items-center gap-2 p-2 bg-cyberDark rounded border border-slate-800">
-                          <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }}></span>
-                          <div className="truncate">
-                            <span className="text-slate-400 block text-[10px]">{c.name}</span>
-                            <span className="font-bold text-white">{fmt(c.val, "VND")}</span>
-                            <span className="text-[10px] text-slate-500 block">({pct.toFixed(1)}%)</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ==================== TAB: KOREA ==================== */}
-            {activeTab === "korea" && (
-              <div className="space-y-6">
-                {/* PARKING ACCOUNTS */}
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
-                  <div className="flex items-center justify-between font-mono">
-                    <h2 className="text-sm font-bold text-neonCyan uppercase">Parking Accounts (파킹통장)</h2>
-                    <button
-                      onClick={() => setKrParking([...krParking, { id: "kp_" + Date.now(), bank: "Toss Bank", name: "New Parking", balance: 0, rate: 2.0, subPots: [] }])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                    >
-                      + Add Parking
-                    </button>
-                  </div>
-
-                  {krParking.map((p, pIdx) => {
-                    const isEditing = editingId === p.id;
-                    return (
-                      <div key={p.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 space-y-3 font-mono text-xs">
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 items-center">
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Bank</span>
-                            {isEditing ? (
-                              <select value={editForm.bank} onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })} className="w-full px-2 py-1 rounded border">
-                                {KOREA_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-                              </select>
-                            ) : <span className="font-bold text-white">{p.bank}</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Account Name</span>
-                            {isEditing ? (
-                              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-2 py-1 rounded border" />
-                            ) : <span className="text-slate-300">{p.name}</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Balance</span>
-                            {isEditing ? (
-                              <input type="number" value={editForm.balance} onChange={(e) => setEditForm({ ...editForm, balance: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonCyan font-bold" />
-                            ) : <span className="font-bold text-neonCyan text-sm">{fmt(p.balance, "KRW")}</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Rate %</span>
-                            {isEditing ? (
-                              <input type="number" step="0.1" value={editForm.rate} onChange={(e) => setEditForm({ ...editForm, rate: Number(e.target.value) })} className="w-16 px-2 py-1 rounded border" />
-                            ) : <span>{p.rate}% / yr</span>}
-                          </div>
-                          <div className="flex items-center justify-end gap-2">
-                            {isEditing ? (
-                              <>
-                                <button onClick={() => {
-                                  const updated = [...krParking];
-                                  updated[pIdx] = { ...editForm };
-                                  setKrParking(updated);
-                                  cancelEdit();
-                                }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded">Save</button>
-                                <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded">Cancel</button>
-                              </>
-                            ) : (
-                              <>
-                                <button onClick={() => startEdit(p.id, p)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded">Edit</button>
-                                <button onClick={() => setKrParking(krParking.filter((_, idx) => idx !== pIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1">Delete</button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* SUB-POTS */}
-                        <div className="pl-4 border-l-2 border-slate-800 space-y-2 pt-2">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-slate-400">Sub-Pots (나눠모으기):</span>
-                            <button
-                              onClick={() => {
-                                const name = prompt("Sub-Pot Name:", "Study Goal");
-                                const amt = prompt("Amount from Parking (KRW):", "100000");
-                                if (name && amt && !isNaN(amt)) {
-                                  const nAmt = Number(amt);
-                                  if (nAmt > p.balance) return alert("Exceeds balance");
-                                  const updated = [...krParking];
-                                  updated[pIdx].balance -= nAmt;
-                                  if (!updated[pIdx].subPots) updated[pIdx].subPots = [];
-                                  updated[pIdx].subPots.push({ id: "sp_" + Date.now(), name, balance: nAmt });
-                                  setKrParking(updated);
-                                }
-                              }}
-                              className="text-[11px] text-cyan-400 hover:underline"
-                            >
-                              + Split to Sub-Pot
-                            </button>
-                          </div>
-                          {(p.subPots || []).map((sp, spIdx) => (
-                            <div key={sp.id} className="flex items-center justify-between bg-black/40 p-2 rounded">
-                              <span className="text-slate-300">{sp.name}</span>
-                              <div className="flex items-center gap-3">
-                                <span className="text-neonGreen font-bold">{fmt(sp.balance, "KRW")}</span>
-                                <button onClick={() => {
-                                  const updated = [...krParking];
-                                  updated[pIdx].balance += sp.balance;
-                                  updated[pIdx].subPots = updated[pIdx].subPots.filter((_, i) => i !== spIdx);
-                                  setKrParking(updated);
-                                }} className="text-slate-500 hover:text-rose-400">Return</button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* SAVINGS (예금 / 적금) WITH MONTHLY DEPOSITS & 2X EARLY WITHDRAWALS */}
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
-                  <div className="flex items-center justify-between font-mono">
-                    <div>
-                      <h2 className="text-sm font-bold text-neonCyan uppercase">Korea Savings (예금 / 적금)</h2>
-                      <p className="text-[11px] text-slate-500">Fixed deposits & Installments with 2x partial withdrawal support</p>
-                    </div>
-                    <button
-                      onClick={() => setKrSavings([...krSavings, {
-                        id: "ks_" + Date.now(),
-                        bank: "Toss Bank",
-                        name: "New Savings",
-                        type: "jeokgeum",
-                        principal: 1000000,
-                        currentPrincipal: 1000000,
-                        rate: 3.5,
-                        taxRate: 15.4,
-                        startDate: new Date().toISOString().slice(0, 10),
-                        maturityDate: "2027-05-09",
-                        deposits: [],
-                        earlyWithdrawals: []
-                      }])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                    >
-                      + Add Savings Account
-                    </button>
-                  </div>
-
-                  {krSavings.map((s, sIdx) => {
-                    const isEditing = editingId === s.id;
-                    const daysTotal = Math.max(1, (new Date(s.maturityDate) - new Date(s.startDate)) / (1000 * 3600 * 24));
-                    const daysPassed = Math.min(daysTotal, Math.max(0, (new Date() - new Date(s.startDate)) / (1000 * 3600 * 24)));
-                    const accruedPreTax = s.currentPrincipal * (s.rate / 100) * (daysPassed / 365);
-                    const accruedNet = accruedPreTax * (1 - (s.taxRate / 100));
-                    const totalPreTax = s.currentPrincipal * (s.rate / 100) * (daysTotal / 365);
-                    const afterTaxExpected = s.currentPrincipal + (totalPreTax * (1 - (s.taxRate / 100)));
-
-                    return (
-                      <div key={s.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 space-y-3 font-mono text-xs">
-                        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 items-center">
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Bank</span>
-                            {isEditing ? (
-                              <select value={editForm.bank} onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })} className="w-full px-2 py-1 rounded border">
-                                {KOREA_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-                              </select>
-                            ) : <span className="font-bold text-white">{s.bank}</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Account</span>
-                            {isEditing ? (
-                              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-2 py-1 rounded border" />
-                            ) : <span className="text-slate-300">{s.name} ({s.type})</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Current Principal</span>
-                            {isEditing ? (
-                              <input type="number" value={editForm.currentPrincipal} onChange={(e) => setEditForm({ ...editForm, currentPrincipal: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonCyan font-bold" />
-                            ) : <span className="font-bold text-neonCyan">{fmt(s.currentPrincipal, "KRW")}</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Rate / Tax %</span>
-                            {isEditing ? (
-                              <div className="flex gap-1">
-                                <input type="number" step="0.1" value={editForm.rate} onChange={(e) => setEditForm({ ...editForm, rate: Number(e.target.value) })} className="w-12 px-1 py-1 rounded border" />
-                                <input type="number" step="0.1" value={editForm.taxRate} onChange={(e) => setEditForm({ ...editForm, taxRate: Number(e.target.value) })} className="w-12 px-1 py-1 rounded border" />
-                              </div>
-                            ) : <span>{s.rate}% ({s.taxRate}%)</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Maturity Date</span>
-                            {isEditing ? (
-                              <input type="date" value={editForm.maturityDate} onChange={(e) => setEditForm({ ...editForm, maturityDate: e.target.value })} className="w-full px-2 py-1 rounded border text-xs" />
-                            ) : <span>{s.maturityDate}</span>}
-                          </div>
-                          <div className="flex items-center justify-end gap-2">
-                            {isEditing ? (
-                              <>
-                                <button onClick={() => {
-                                  const updated = [...krSavings];
-                                  updated[sIdx] = { ...editForm };
-                                  setKrSavings(updated);
-                                  cancelEdit();
-                                }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded">Save</button>
-                                <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded">Cancel</button>
-                              </>
-                            ) : (
-                              <>
-                                <button onClick={() => startEdit(s.id, s)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded">Edit</button>
-                                <button onClick={() => setKrSavings(krSavings.filter((_, idx) => idx !== sIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1">Delete</button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* STATS & ACTIONS */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-800 text-xs">
-                          <div className="flex items-center gap-6">
-                            <div><span className="text-slate-500">Accrued Interest to Date: </span><span className="text-neonYellow font-bold">+{fmt(accruedNet, "KRW")}</span></div>
-                            <div><span className="text-slate-500">Expected at Maturity: </span><span className="text-neonGreen font-bold">{fmt(afterTaxExpected, "KRW")}</span></div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            {/* Monthly Deposit */}
-                            <button
-                              onClick={() => {
-                                const amt = prompt("Deposit amount to add (KRW):", "1000000");
-                                if (!amt || isNaN(amt)) return;
-                                const src = prompt("Deduct from Parking source account:", "Toss Parking");
-                                const mode = confirm("Press OK for Auto recurring, Cancel for Manual") ? "Auto" : "Manual";
-                                const updated = [...krSavings];
-                                if (!updated[sIdx].deposits) updated[sIdx].deposits = [];
-                                updated[sIdx].deposits.push({
-                                  id: "dep_" + Date.now(),
-                                  date: new Date().toISOString().slice(0, 10),
-                                  amount: Number(amt),
-                                  source: src || "Parking",
-                                  mode
-                                });
-                                updated[sIdx].currentPrincipal += Number(amt);
-                                setKrSavings(updated);
-                              }}
-                              className="px-2 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                            >
-                              + Add Deposit
-                            </button>
-
-                            {/* 2X Partial Withdrawal */}
-                            <button
-                              disabled={(s.earlyWithdrawals || []).length >= 2}
-                              onClick={() => {
-                                const wAmt = prompt("Principal to withdraw early (KRW):", "1000000");
-                                if (!wAmt || isNaN(wAmt)) return;
-                                const nAmt = Number(wAmt);
-                                if (nAmt > s.currentPrincipal) return alert("Exceeds current principal");
-                                const earlyInt = prompt("Early interest earned (editable):", Math.round(nAmt * (s.rate / 100) * 0.5).toString());
-                                const updated = [...krSavings];
-                                if (!updated[sIdx].earlyWithdrawals) updated[sIdx].earlyWithdrawals = [];
-                                updated[sIdx].earlyWithdrawals.push({
-                                  date: new Date().toISOString().slice(0, 10),
-                                  principal: nAmt,
-                                  interestPaid: Number(earlyInt) || 0
-                                });
-                                updated[sIdx].currentPrincipal -= nAmt;
-                                setKrSavings(updated);
-                              }}
-                              className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded disabled:opacity-30"
-                            >
-                              Partial Withdraw ({(s.earlyWithdrawals || []).length}/2)
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* DEPOSIT HISTORY TABLE */}
-                        {(s.deposits || []).length > 0 && (
-                          <div className="bg-black/40 p-2 rounded space-y-1">
-                            <span className="text-[10px] text-slate-500 block uppercase font-bold">Deposit History</span>
-                            <div className="grid grid-cols-4 text-[11px] text-slate-400 border-b border-slate-800 pb-1">
-                              <span>Date</span><span>Amount</span><span>Source</span><span>Mode</span>
-                            </div>
-                            {s.deposits.map(d => (
-                              <div key={d.id} className="grid grid-cols-4 text-[11px] text-slate-300">
-                                <span>{d.date}</span>
-                                <span className="text-neonCyan">{fmt(d.amount, "KRW")}</span>
-                                <span>{d.source}</span>
-                                <span className="text-neonGreen">{d.mode}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* WITHDRAWAL HISTORY TABLE */}
-                        {(s.earlyWithdrawals || []).length > 0 && (
-                          <div className="bg-black/40 p-2 rounded space-y-1">
-                            <span className="text-[10px] text-slate-500 block uppercase font-bold text-amber-400">Withdrawal History</span>
-                            {s.earlyWithdrawals.map((w, i) => (
-                              <div key={i} className="text-[11px] text-slate-300">
-                                • {w.date}: Withdrew {fmt(w.principal, "KRW")} | Associated Interest Paid: {fmt(w.interestPaid, "KRW")}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ==================== TAB: VIETNAM ==================== */}
-            {activeTab === "vietnam" && (
-              <div className="space-y-6">
-                {/* PARKING / SPENDING */}
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
-                  <div className="flex items-center justify-between font-mono">
-                    <h2 className="text-sm font-bold text-neonCyan uppercase">Checking Accounts (VND)</h2>
-                    <button
-                      onClick={() => setVnParking([...vnParking, { id: "vp_" + Date.now(), bank: "MBBank", name: "Spending Account", balance: 0, rate: 0.2 }])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                    >
-                      + Add Account
-                    </button>
-                  </div>
-
-                  {vnParking.map((p, pIdx) => {
-                    const isEditing = editingId === p.id;
-                    return (
-                      <div key={p.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 space-y-3 font-mono text-xs">
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 items-center">
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Bank</span>
-                            {isEditing ? (
-                              <select value={editForm.bank} onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })} className="w-full px-2 py-1 rounded border">
-                                {VN_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-                              </select>
-                            ) : <span className="font-bold text-white">{p.bank}</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Account Name</span>
-                            {isEditing ? (
-                              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-2 py-1 rounded border" />
-                            ) : <span className="text-slate-300">{p.name}</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Balance</span>
-                            {isEditing ? (
-                              <input type="number" value={editForm.balance} onChange={(e) => setEditForm({ ...editForm, balance: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonCyan font-bold" />
-                            ) : <span className="font-bold text-neonCyan text-sm">{fmt(p.balance, "VND")}</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Rate %</span>
-                            {isEditing ? (
-                              <input type="number" step="0.1" value={editForm.rate} onChange={(e) => setEditForm({ ...editForm, rate: Number(e.target.value) })} className="w-16 px-2 py-1 rounded border" />
-                            ) : <span>{p.rate}% / yr</span>}
-                          </div>
-                          <div className="flex items-center justify-end gap-2">
-                            {isEditing ? (
-                              <>
-                                <button onClick={() => {
-                                  const updated = [...vnParking];
-                                  updated[pIdx] = { ...editForm };
-                                  setVnParking(updated);
-                                  cancelEdit();
-                                }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded">Save</button>
-                                <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded">Cancel</button>
-                              </>
-                            ) : (
-                              <>
-                                <button onClick={() => startEdit(p.id, p)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded">Edit</button>
-                                <button onClick={() => setVnParking(vnParking.filter((_, idx) => idx !== pIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1">Delete</button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* TERM DEPOSITS (NO PARTIAL WITHDRAWAL - ONLY ACCRUED & MONTHLY TOP-UPS) */}
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4">
-                  <div className="flex items-center justify-between font-mono">
-                    <div>
-                      <h2 className="text-sm font-bold text-neonCyan uppercase">Vietnam Term & Goal Deposits</h2>
-                      <p className="text-[11px] text-slate-500">Fixed terms (1W-36M) and flexible goal savings with deposit schedules</p>
-                    </div>
-                    <button
-                      onClick={() => setVnSavings([...vnSavings, {
-                        id: "vs_" + Date.now(),
-                        bank: "MBBank",
-                        name: "Flexible Goal",
-                        type: "flexible",
-                        term: "12M",
-                        principal: 3000000,
-                        currentPrincipal: 3000000,
-                        rate: 5.5,
-                        startDate: new Date().toISOString().slice(0, 10),
-                        maturityDate: "2027-05-09",
-                        deposits: []
-                      }])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                    >
-                      + Add Term Deposit
-                    </button>
-                  </div>
-
-                  {vnSavings.map((s, sIdx) => {
-                    const isEditing = editingId === s.id;
-                    const daysTotal = Math.max(1, (new Date(s.maturityDate) - new Date(s.startDate)) / (1000 * 3600 * 24));
-                    const daysPassed = Math.min(daysTotal, Math.max(0, (new Date() - new Date(s.startDate)) / (1000 * 3600 * 24)));
-                    const accruedInterest = s.currentPrincipal * (s.rate / 100) * (daysPassed / 365);
-                    const maturityTotal = s.currentPrincipal + (s.currentPrincipal * (s.rate / 100) * (daysTotal / 365));
-
-                    return (
-                      <div key={s.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 space-y-3 font-mono text-xs">
-                        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 items-center">
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Bank</span>
-                            {isEditing ? (
-                              <select value={editForm.bank} onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })} className="w-full px-2 py-1 rounded border">
-                                {VN_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-                              </select>
-                            ) : <span className="font-bold text-white">{s.bank}</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Type / Term</span>
-                            {isEditing ? (
-                              <div className="space-y-1">
-                                <select value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })} className="w-full px-1 py-0.5 rounded border text-[11px]">
-                                  <option value="fixed">Fixed Term</option>
-                                  <option value="flexible">Flexible Goal</option>
-                                </select>
-                                <select value={editForm.term} onChange={(e) => setEditForm({ ...editForm, term: e.target.value })} className="w-full px-1 py-0.5 rounded border text-[11px]">
-                                  {(editForm.type === "fixed" ? VN_FIXED_TERMS : VN_FLEX_TERMS).map(t => <option key={t} value={t}>{t}</option>)}
-                                </select>
-                              </div>
-                            ) : <span className="text-slate-300">{s.name} ({s.term})</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Principal</span>
-                            {isEditing ? (
-                              <input type="number" value={editForm.currentPrincipal} onChange={(e) => setEditForm({ ...editForm, currentPrincipal: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonCyan font-bold" />
-                            ) : <span className="font-bold text-neonCyan">{fmt(s.currentPrincipal, "VND")}</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Rate %</span>
-                            {isEditing ? (
-                              <input type="number" step="0.1" value={editForm.rate} onChange={(e) => setEditForm({ ...editForm, rate: Number(e.target.value) })} className="w-16 px-2 py-1 rounded border" />
-                            ) : <span>{s.rate}%</span>}
-                          </div>
-                          <div>
-                            <span className="text-slate-500 text-[10px] block">Maturity Date</span>
-                            {isEditing ? (
-                              <input type="date" value={editForm.maturityDate} onChange={(e) => setEditForm({ ...editForm, maturityDate: e.target.value })} className="w-full px-2 py-1 rounded border text-xs" />
-                            ) : <span>{s.maturityDate}</span>}
-                          </div>
-                          <div className="flex items-center justify-end gap-2">
-                            {isEditing ? (
-                              <>
-                                <button onClick={() => {
-                                  const updated = [...vnSavings];
-                                  updated[sIdx] = { ...editForm };
-                                  setVnSavings(updated);
-                                  cancelEdit();
-                                }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded">Save</button>
-                                <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded">Cancel</button>
-                              </>
-                            ) : (
-                              <>
-                                <button onClick={() => startEdit(s.id, s)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded">Edit</button>
-                                <button onClick={() => setVnSavings(vnSavings.filter((_, idx) => idx !== sIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1">Delete</button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* ACCRUED SUMMARY & TOP-UP ACTION */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-800 text-xs">
-                          <div className="flex items-center gap-6">
-                            <div><span className="text-slate-500">Accrued Interest to Date: </span><span className="text-neonYellow font-bold">+{fmt(accruedInterest, "VND")}</span></div>
-                            <div><span className="text-slate-500">At Maturity Target: </span><span className="text-neonGreen font-bold">{fmt(maturityTotal, "VND")}</span></div>
-                          </div>
-
-                          <button
-                            onClick={() => {
-                              const amt = prompt("Top-up amount (VND):", "3500000");
-                              if (!amt || isNaN(amt)) return;
-                              const src = prompt("Source account (e.g. MB Spending):", "MB Spending");
-                              const mode = confirm("Press OK for Auto monthly, Cancel for Manual") ? "Auto" : "Manual";
-                              const updated = [...vnSavings];
-                              if (!updated[sIdx].deposits) updated[sIdx].deposits = [];
-                              updated[sIdx].deposits.push({
-                                id: "dep_" + Date.now(),
-                                date: new Date().toISOString().slice(0, 10),
-                                amount: Number(amt),
-                                source: src || "Checking",
-                                mode
-                              });
-                              updated[sIdx].currentPrincipal += Number(amt);
-                              setVnSavings(updated);
-                            }}
-                            className="px-2 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                          >
-                            + Add Deposit
-                          </button>
-                        </div>
-
-                        {/* DEPOSIT HISTORY TABLE */}
-                        {(s.deposits || []).length > 0 && (
-                          <div className="bg-black/40 p-2 rounded space-y-1">
-                            <span className="text-[10px] text-slate-500 block uppercase font-bold">Deposit History</span>
-                            <div className="grid grid-cols-4 text-[11px] text-slate-400 border-b border-slate-800 pb-1">
-                              <span>Date</span><span>Amount</span><span>Source</span><span>Mode</span>
-                            </div>
-                            {s.deposits.map(d => (
-                              <div key={d.id} className="grid grid-cols-4 text-[11px] text-slate-300">
-                                <span>{d.date}</span>
-                                <span className="text-neonCyan">{fmt(d.amount, "VND")}</span>
-                                <span>{d.source}</span>
-                                <span className="text-neonGreen">{d.mode}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ==================== TAB: MUTUAL FUNDS ==================== */}
-            {activeTab === "invest" && (
-              <div className="space-y-6">
-                {/* FUND PORTFOLIO SUMMARY CARDS */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
-                  <div className="bg-cyberCard border border-cyberBorder p-4 rounded-xl">
-                    <span className="text-slate-500 block">Total Invested Cost</span>
-                    <span className="text-xl font-bold text-white mt-1 block">{fmt(totals.totalFundCost, "VND")}</span>
-                  </div>
-                  <div className="bg-cyberCard border border-cyberBorder p-4 rounded-xl">
-                    <span className="text-slate-500 block">Current Portfolio Valuation</span>
-                    <span className="text-xl font-bold text-neonCyan mt-1 block">{fmt(totals.totalFundMarket, "VND")}</span>
-                  </div>
-                  <div className="bg-cyberCard border border-cyberBorder p-4 rounded-xl">
-                    <span className="text-slate-500 block">Total PnL / ROI</span>
-                    <span className={`text-xl font-bold mt-1 block ${totals.totalFundMarket >= totals.totalFundCost ? "text-neonGreen" : "text-rose-400"}`}>
-                      {totals.totalFundMarket >= totals.totalFundCost ? "+" : ""}{fmt(totals.totalFundMarket - totals.totalFundCost, "VND")}
-                    </span>
-                  </div>
-                </div>
-
-                {/* TIERED FUNDS BY TICKER */}
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4 font-mono">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-sm font-bold text-neonCyan uppercase">Tiered Funds Portfolio</h2>
-                      <p className="text-[11px] text-slate-500">Grouped by Ticker with DCA purchase lots</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const ticker = prompt("Fund Ticker (e.g. DCDS, VESAF, MBBOND):");
-                        if (ticker) {
-                          setFunds([...funds, { ticker: ticker.toUpperCase(), currentNav: 15000, purchases: [] }]);
-                        }
-                      }}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                    >
-                      + Add Ticker
-                    </button>
-                  </div>
-
-                  {funds.map((f, fIdx) => {
-                    const totalUnits = (f.purchases || []).reduce((sum, p) => sum + p.units, 0);
-                    const totalCost = (f.purchases || []).reduce((sum, p) => sum + (p.units * p.buyPrice), 0);
-                    const avgCost = totalUnits > 0 ? totalCost / totalUnits : 0;
-                    const marketVal = totalUnits * f.currentNav;
-                    const pnl = marketVal - totalCost;
-                    const roi = totalCost > 0 ? (pnl / totalCost) * 100 : 0;
-
-                    return (
-                      <div key={f.ticker} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 space-y-3 text-xs">
-                        {/* Ticker Header Summary */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-3">
-                          <div>
-                            <span className="text-xl font-black text-white mr-3">{f.ticker}</span>
-                            <span className="text-slate-400">Total Units: <b className="text-neonCyan">{totalUnits.toFixed(2)}</b></span>
-                          </div>
-
-                          <div className="flex items-center gap-6">
-                            <div><span className="text-slate-500 block text-[10px]">Avg Cost:</span><span className="text-slate-300">{fmt(avgCost, "VND")}</span></div>
-                            <div>
-                              <span className="text-slate-500 block text-[10px]">Current NAV:</span>
-                              <span
-                                onClick={() => {
-                                  const n = prompt(`Update NAV for ${f.ticker}:`, f.currentNav);
-                                  if (n && !isNaN(n)) {
-                                    const updated = [...funds];
-                                    updated[fIdx].currentNav = Number(n);
-                                    setFunds(updated);
-                                  }
-                                }}
-                                className="text-neonGreen font-bold cursor-pointer hover:underline"
-                              >
-                                {fmt(f.currentNav, "VND")} ✎
-                              </span>
-                            </div>
-                            <div><span className="text-slate-500 block text-[10px]">Market Value:</span><span className="text-white font-bold">{fmt(marketVal, "VND")}</span></div>
-                            <div>
-                              <span className="text-slate-500 block text-[10px]">PnL:</span>
-                              <span className={`font-bold ${pnl >= 0 ? "text-neonGreen" : "text-rose-400"}`}>
-                                {pnl >= 0 ? "+" : ""}{fmt(pnl, "VND")} ({roi.toFixed(2)}%)
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => setFunds(funds.filter((_, idx) => idx !== fIdx))}
-                              className="text-rose-400 hover:text-rose-300 text-xs"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Purchase Lots History */}
-                        <div className="space-y-2 pt-1">
-                          <div className="flex items-center justify-between text-slate-400 text-[11px]">
-                            <span>DCA Purchase History:</span>
-                            <button
-                              onClick={() => {
-                                const d = prompt("Purchase Date (YYYY-MM-DD):", new Date().toISOString().slice(0, 10));
-                                const u = prompt("Units bought (Số lượng CCQ):", "22.5");
-                                const p = prompt("Buy Price (Giá mua NAV):", f.currentNav.toString());
-                                const s = prompt("Source account (e.g. MB Spending):", "MB Spending");
-                                if (d && u && p) {
-                                  const updated = [...funds];
-                                  if (!updated[fIdx].purchases) updated[fIdx].purchases = [];
-                                  updated[fIdx].purchases.push({
-                                    id: "lot_" + Date.now(),
-                                    date: d,
-                                    units: Number(u),
-                                    buyPrice: Number(p),
-                                    source: s || "Checking"
-                                  });
-                                  setFunds(updated);
-                                }
-                              }}
-                              className="text-cyan-400 hover:underline"
-                            >
-                              + Add Purchase Lot
-                            </button>
-                          </div>
-
-                          {(f.purchases || []).map((lot, lIdx) => (
-                            <div key={lot.id} className="grid grid-cols-5 bg-black/40 p-2 rounded text-[11px] items-center text-slate-300">
-                              <span>{lot.date}</span>
-                              <span>Units: <b className="text-neonCyan">{lot.units}</b></span>
-                              <span>Price: {fmt(lot.buyPrice, "VND")}</span>
-                              <span>Source: {lot.source}</span>
-                              <div className="text-right">
-                                <button
-                                  onClick={() => {
-                                    const updated = [...funds];
-                                    updated[fIdx].purchases = updated[fIdx].purchases.filter((_, i) => i !== lIdx);
-                                    setFunds(updated);
-                                  }}
-                                  className="text-rose-400 hover:text-rose-300 text-xs"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ==================== TAB: PROPERTY ==================== */}
-            {activeTab === "assets" && (
-              <div className="space-y-6">
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4 font-mono">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-sm font-bold text-neonCyan uppercase">Real Estate & Major Property</h2>
-                      <p className="text-[11px] text-slate-500">Fixed assets & housing key deposits</p>
-                    </div>
-                    <button
-                      onClick={() => setProperties([...properties, {
-                        id: "pr_" + Date.now(),
-                        name: "New Property",
-                        type: "Real Estate",
-                        address: "Vietnam",
-                        buyDate: new Date().toISOString().slice(0, 10),
-                        valuation: 1000000000,
-                        currency: "VND",
-                        fundedFrom: "None"
-                      }])}
-                      className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                    >
-                      + Add Asset
-                    </button>
-                  </div>
-
-                  {properties.map((p, pIdx) => {
-                    const isEditing = editingId === p.id;
-                    return (
-                      <div key={p.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 grid grid-cols-2 md:grid-cols-5 gap-3 text-xs items-center">
-                        <div>
-                          <span className="text-slate-500 text-[10px] block">Name</span>
-                          {isEditing ? (
-                            <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-2 py-1 rounded border font-bold" />
-                          ) : <span className="font-bold text-white">{p.name}</span>}
-                        </div>
-                        <div>
-                          <span className="text-slate-500 text-[10px] block">Location</span>
-                          {isEditing ? (
-                            <input type="text" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} className="w-full px-2 py-1 rounded border" />
-                          ) : <span className="text-slate-300">{p.address}</span>}
-                        </div>
-                        <div>
-                          <span className="text-slate-500 text-[10px] block">Valuation</span>
-                          {isEditing ? (
-                            <div className="flex gap-1">
-                              <input type="number" value={editForm.valuation} onChange={(e) => setEditForm({ ...editForm, valuation: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-neonYellow font-bold" />
-                              <select value={editForm.currency} onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })} className="w-16 px-1 py-1 rounded border text-xs">
-                                <option value="VND">VND</option>
-                                <option value="KRW">KRW</option>
-                                <option value="USD">USD</option>
-                              </select>
-                            </div>
-                          ) : <span className="font-bold text-neonYellow">{fmt(p.valuation, p.currency)}</span>}
-                        </div>
-                        <div>
-                          <span className="text-slate-500 text-[10px] block">Funded Source</span>
-                          {isEditing ? (
-                            <input type="text" value={editForm.fundedFrom} onChange={(e) => setEditForm({ ...editForm, fundedFrom: e.target.value })} className="w-full px-2 py-1 rounded border" />
-                          ) : <span>{p.fundedFrom || "None"}</span>}
-                        </div>
-                        <div className="flex items-center justify-end gap-2">
-                          {isEditing ? (
-                            <>
-                              <button onClick={() => {
-                                const updated = [...properties];
-                                updated[pIdx] = { ...editForm };
-                                setProperties(updated);
-                                cancelEdit();
-                              }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded">Save</button>
-                              <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded">Cancel</button>
-                            </>
-                          ) : (
-                            <>
-                              <button onClick={() => startEdit(p.id, p)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded">Edit</button>
-                              <button onClick={() => setProperties(properties.filter((_, idx) => idx !== pIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1">Delete</button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ==================== TAB: CASHFLOW ==================== */}
-            {activeTab === "cashflow" && (
-              <div className="space-y-6">
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4 font-mono">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-sm font-bold text-neonCyan uppercase">Cashflow Terminal (Chronological Grouping)</h2>
-                      <p className="text-[11px] text-slate-500">Grouped by date with 6 Jars category mapping</p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <select value={cfFilterType} onChange={(e) => setCfFilterType(e.target.value)} className="px-2 py-1 rounded border text-xs">
-                        <option value="ALL">All Types</option>
-                        <option value="Income">Income Only</option>
-                        <option value="Expense">Expense Only</option>
-                      </select>
-
-                      <button
-                        onClick={() => setShowJarModal(true)}
-                        className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 rounded"
-                      >
-                        ⚙️ Configure Jars
-                      </button>
-
-                      <button
-                        onClick={() => setCashflow([
-                          {
-                            id: "cf_" + Date.now(),
-                            date: new Date().toISOString().slice(0, 10),
-                            type: "Expense",
-                            jarId: "NEC",
-                            catId: "nec_groc",
-                            amount: 25000,
-                            currency: "KRW",
-                            account: "Toss Bank",
-                            desc: "Supermarket"
-                          },
-                          ...cashflow
-                        ])}
-                        className="text-xs px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded"
-                      >
-                        + Log Record
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* GROUPED TRANSACTIONS BY DATE */}
-                  {Object.entries(
-                    cashflow
-                      .filter(c => cfFilterType === "ALL" || c.type === cfFilterType)
-                      .reduce((groups, item) => {
-                        const date = item.date;
-                        if (!groups[date]) groups[date] = [];
-                        groups[date].push(item);
-                        return groups;
-                      }, {})
-                  ).sort((a, b) => new Date(b[0]) - new Date(a[0])).map(([date, items]) => (
-                    <div key={date} className="border border-slate-800 rounded-lg overflow-hidden bg-cyberDark/60">
-                      <div className="bg-slate-900/80 px-3 py-1.5 text-xs font-bold text-slate-400 border-b border-slate-800 flex justify-between">
-                        <span>📅 {date}</span>
-                        <span>{items.length} records</span>
-                      </div>
-
-                      <div className="divide-y divide-slate-800/50">
-                        {items.map(c => {
-                          const isEditing = editingId === c.id;
-                          const activeJar = jars.find(j => j.id === (isEditing ? editForm.jarId : c.jarId)) || jars[0];
-
-                          return (
-                            <div key={c.id} className="p-2.5 grid grid-cols-2 md:grid-cols-6 gap-2 text-xs items-center">
-                              <div>
-                                {isEditing ? (
-                                  <select value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })} className="w-full px-1 py-0.5 rounded border text-[11px]">
-                                    <option value="Income">Income</option>
-                                    <option value="Expense">Expense</option>
-                                  </select>
-                                ) : (
-                                  <span className={`font-bold ${c.type === "Income" ? "text-neonGreen" : "text-rose-400"}`}>
-                                    {c.type}
-                                  </span>
-                                )}
-                              </div>
-
-                              <div>
-                                {isEditing ? (
-                                  <div className="space-y-1">
-                                    <select value={editForm.jarId} onChange={(e) => setEditForm({ ...editForm, jarId: e.target.value, catId: jars.find(j => j.id === e.target.value)?.categories[0]?.id })} className="w-full px-1 py-0.5 rounded border text-[10px]">
-                                      {jars.map(j => <option key={j.id} value={j.id}>{lang === "en" ? j.nameEn : j.nameKo}</option>)}
-                                    </select>
-                                    <select value={editForm.catId} onChange={(e) => setEditForm({ ...editForm, catId: e.target.value })} className="w-full px-1 py-0.5 rounded border text-[10px]">
-                                      {activeJar.categories.map(cat => <option key={cat.id} value={cat.id}>{lang === "en" ? cat.en : cat.ko}</option>)}
-                                    </select>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <span className="text-cyan-400 block text-[10px]">{c.jarId}</span>
-                                    <span className="text-slate-300">{activeJar.categories.find(cat => cat.id === c.catId)?.[lang] || c.catId}</span>
-                                  </div>
-                                )}
-                              </div>
-
-                              <div>
-                                {isEditing ? (
-                                  <div className="flex gap-1">
-                                    <input type="number" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })} className="w-full px-1 py-0.5 rounded border font-bold" />
-                                    <select value={editForm.currency} onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })} className="w-14 px-1 py-0.5 rounded border text-[10px]">
-                                      <option value="KRW">KRW</option>
-                                      <option value="VND">VND</option>
-                                      <option value="USD">USD</option>
-                                    </select>
-                                  </div>
-                                ) : <span className={`font-bold ${c.type === "Income" ? "text-neonGreen" : "text-rose-400"}`}>{fmt(c.amount, c.currency)}</span>}
-                              </div>
-
-                              <div>
-                                {isEditing ? (
-                                  <input type="text" value={editForm.account} onChange={(e) => setEditForm({ ...editForm, account: e.target.value })} className="w-full px-1 py-0.5 rounded border text-xs" />
-                                ) : <span>{c.account}</span>}
-                              </div>
-
-                              <div>
-                                {isEditing ? (
-                                  <input type="text" value={editForm.desc} onChange={(e) => setEditForm({ ...editForm, desc: e.target.value })} className="w-full px-1 py-0.5 rounded border text-xs" />
-                                ) : <span className="text-slate-400">{c.desc}</span>}
-                              </div>
-
-                              <div className="flex items-center justify-end gap-2">
-                                {isEditing ? (
-                                  <>
-                                    <button onClick={() => {
-                                      const updated = cashflow.map(item => item.id === c.id ? { ...editForm } : item);
-                                      setCashflow(updated);
-                                      cancelEdit();
-                                    }} className="px-2 py-0.5 bg-neonGreen text-black font-bold rounded">Save</button>
-                                    <button onClick={cancelEdit} className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded">Cancel</button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <button onClick={() => startEdit(c.id, c)} className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded">Edit</button>
-                                    <button onClick={() => setCashflow(cashflow.filter(item => item.id !== c.id))} className="text-rose-400 hover:text-rose-300 px-2 py-0.5">Delete</button>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ==================== TAB: DEBTS ==================== */}
-            {activeTab === "debt" && (
-              <div className="space-y-6">
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4 font-mono">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-sm font-bold text-rose-400 uppercase">Liabilities & Held Security Deposits</h2>
-                      <p className="text-[11px] text-slate-500">Refundable tenant key money and debt obligations</p>
-                    </div>
-                    <button
-                      onClick={() => setDebts([...debts, { id: "d_" + Date.now(), name: "Tenant Deposit", amount: 14000000, currency: "VND", party: "Tenant", dueDate: "2027-05-09" }])}
-                      className="text-xs px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded"
-                    >
-                      + Add Obligation
-                    </button>
-                  </div>
-
-                  {debts.map((d, dIdx) => {
-                    const isEditing = editingId === d.id;
-                    return (
-                      <div key={d.id} className="border border-slate-800 rounded-lg p-4 bg-cyberDark/60 grid grid-cols-2 md:grid-cols-5 gap-3 text-xs items-center">
-                        <div>
-                          <span className="text-slate-500 text-[10px] block">Name</span>
-                          {isEditing ? (
-                            <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-2 py-1 rounded border font-bold text-white" />
-                          ) : <span className="font-bold text-white">{d.name}</span>}
-                        </div>
-                        <div>
-                          <span className="text-slate-500 text-[10px] block">Party</span>
-                          {isEditing ? (
-                            <input type="text" value={editForm.party} onChange={(e) => setEditForm({ ...editForm, party: e.target.value })} className="w-full px-2 py-1 rounded border" />
-                          ) : <span className="text-slate-300">{d.party}</span>}
-                        </div>
-                        <div>
-                          <span className="text-slate-500 text-[10px] block">Amount</span>
-                          {isEditing ? (
-                            <div className="flex gap-1">
-                              <input type="number" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })} className="w-full px-2 py-1 rounded border text-rose-400 font-bold" />
-                              <select value={editForm.currency} onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })} className="w-16 px-1 py-1 rounded border text-xs">
-                                <option value="VND">VND</option>
-                                <option value="KRW">KRW</option>
-                                <option value="USD">USD</option>
-                              </select>
-                            </div>
-                          ) : <span className="font-bold text-rose-400">-{fmt(d.amount, d.currency)}</span>}
-                        </div>
-                        <div>
-                          <span className="text-slate-500 text-[10px] block">Due Date</span>
-                          {isEditing ? (
-                            <input type="date" value={editForm.dueDate} onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })} className="w-full px-2 py-1 rounded border text-xs" />
-                          ) : <span>{d.dueDate}</span>}
-                        </div>
-                        <div className="flex items-center justify-end gap-2">
-                          {isEditing ? (
-                            <>
-                              <button onClick={() => {
-                                const updated = [...debts];
-                                updated[dIdx] = { ...editForm };
-                                setDebts(updated);
-                                cancelEdit();
-                              }} className="px-2 py-1 bg-neonGreen text-black font-bold rounded">Save</button>
-                              <button onClick={cancelEdit} className="px-2 py-1 bg-slate-800 text-slate-400 rounded">Cancel</button>
-                            </>
-                          ) : (
-                            <>
-                              <button onClick={() => startEdit(d.id, d)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded">Edit</button>
-                              <button onClick={() => setDebts(debts.filter((_, idx) => idx !== dIdx))} className="text-rose-400 hover:text-rose-300 px-2 py-1">Delete</button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ==================== TAB: 6 JARS ANALYSIS ==================== */}
-            {activeTab === "analytics" && (
-              <div className="space-y-6">
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl p-5 space-y-4 font-mono">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-sm font-bold text-neonCyan uppercase">6 Jars System Performance</h2>
-                      <p className="text-[11px] text-slate-500">Expenditure tracking across predefined percentage pots</p>
-                    </div>
-                    <button
-                      onClick={() => setShowJarModal(true)}
-                      className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 rounded"
-                    >
-                      ⚙️ Configure Jars & %
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {jars.map(j => {
-                      const spent = cashflow.filter(c => c.jarId === j.id && c.type === "Expense").reduce((sum, c) => sum + toVND(c.amount, c.currency), 0);
-                      return (
-                        <div key={j.id} className="p-4 bg-cyberDark/60 rounded border border-slate-800 space-y-2 text-xs">
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-white text-sm">{lang === "en" ? j.nameEn : j.nameKo}</span>
-                            <span className="text-neonCyan font-bold">Target: {j.pct}%</span>
-                          </div>
-                          <div className="flex justify-between text-slate-400">
-                            <span>Total Spent:</span>
-                            <span className="text-neonPink font-bold">{fmt(spent, "VND")}</span>
-                          </div>
-                          <div className="text-[11px] text-slate-500">
-                            Registered Categories: {j.categories.map(c => c[lang]).join(", ")}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ==================== 6 JARS CONFIGURATION MODAL ==================== */}
-            {showJarModal && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 font-mono">
-                <div className="bg-cyberCard border border-cyberBorder rounded-xl max-w-2xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <h2 className="text-sm font-bold text-neonCyan uppercase">Configure 6 Jars & Categories</h2>
-                    <button onClick={() => setShowJarModal(false)} className="text-slate-400 hover:text-white">✕</button>
-                  </div>
-
-                  <div className="space-y-4">
-                    {jars.map((j, jIdx) => (
-                      <div key={j.id} className="p-3 bg-cyberDark rounded border border-slate-800 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-white">{lang === "en" ? j.nameEn : j.nameKo}</span>
-                          <div className="flex items-center gap-2">
-                            <span>Target %:</span>
-                            <input
-                              type="number"
-                              value={j.pct}
-                              onChange={(e) => {
-                                const updated = [...jars];
-                                updated[jIdx].pct = Number(e.target.value);
-                                setJars(updated);
-                              }}
-                              className="w-16 px-1.5 py-0.5 rounded border text-neonCyan font-bold text-center"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1.5 pt-2">
-                          {j.categories.map((c, cIdx) => (
-                            <span key={c.id} className="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-300 flex items-center gap-1.5 text-[11px]">
-                              {lang === "en" ? c.en : c.ko}
-                              <button onClick={() => {
-                                const updated = [...jars];
-                                updated[jIdx].categories = updated[jIdx].categories.filter((_, i) => i !== cIdx);
-                                setJars(updated);
-                              }} className="text-slate-500 hover:text-rose-400">✕</button>
-                            </span>
-                          ))}
-                          <button
-                            onClick={() => {
-                              const nameEn = prompt("Category English name:", "New Category");
-                              const nameKo = prompt("Category Korean name:", "새 카테고리");
-                              if (nameEn && nameKo) {
-                                const updated = [...jars];
-                                updated[jIdx].categories.push({ id: "cat_" + Date.now(), en: nameEn, ko: nameKo });
-                                setJars(updated);
-                              }
-                            }}
-                            className="text-cyan-400 hover:underline px-2 py-0.5"
-                          >
-                            + Add Category
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-800 text-right">
-                    <button onClick={() => setShowJarModal(false)} className="px-4 py-2 bg-neonGreen text-black font-bold rounded">
-                      Close & Apply
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-          </main>
+<div class="container">
+  <!-- Top Bar: Settings, Currency, Sync -->
+  <header>
+    <div class="flex-row">
+      <select id="langSelect" style="width: 100px;" onchange="changeLanguage()">
+        <option value="EN">English</option>
+        <option value="KR">한국어</option>
+      </select>
+      <select id="displayCurrency" style="width: 100px;" onchange="renderApp()">
+        <option value="VND">VND</option>
+        <option value="KRW">KRW</option>
+        <option value="USD">USD</option>
+      </select>
+    </div>
+
+    <div class="rates-bar">
+      <span class="rate-item" id="krwVndDisplay">1 KRW = -- VND</span>
+      <span class="rate-item" id="usdKrwDisplay">1 USD = -- KRW</span>
+      <button class="btn btn-secondary" onclick="fetchExchangeRates()" data-i18n="resetRates">Sync Rates</button>
+      <button class="btn" onclick="syncWithGoogleSheet()" data-i18n="saveCloud">Sync Cloud</button>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('overview')" data-i18n="tabOverview">Overview</button>
+    <button class="tab-btn" onclick="switchTab('korea')" data-i18n="tabKorea">Korea Banking</button>
+    <button class="tab-btn" onclick="switchTab('vietnam')" data-i18n="tabVietnam">Vietnam Banking</button>
+    <button class="tab-btn" onclick="switchTab('funds')" data-i18n="tabFunds">Investment Funds</button>
+    <button class="tab-btn" onclick="switchTab('assets')" data-i18n="tabAssets">Real Estate & Others</button>
+  </div>
+
+  <!-- VIEW: OVERVIEW -->
+  <div id="view-overview" class="view-panel active">
+    <div class="grid-4">
+      <div class="stat-box">
+        <div class="stat-label" data-i18n="totalNetWorth">TOTAL NET WORTH</div>
+        <div class="stat-value" id="netWorthDisplay">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" data-i18n="koreaAssets">KOREA ASSETS</div>
+        <div class="stat-value" id="koreaTotalDisplay">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" data-i18n="vietnamAssets">VIETNAM ASSETS</div>
+        <div class="stat-value" id="vietnamTotalDisplay">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" data-i18n="investmentsOther">FUNDS & REAL ESTATE</div>
+        <div class="stat-value" id="fundsEstateDisplay">0</div>
+      </div>
+    </div>
+
+    <!-- Income & Savings Rate Module -->
+    <div class="card">
+      <div class="card-title" data-i18n="monthlyCashFlow">Monthly Cash Flow & Savings Rate</div>
+      <div class="flex-row" style="margin-bottom: 8px;">
+        <button class="btn" onclick="addIncomeRow('active')" data-i18n="addActiveIncome">+ Active Income</button>
+        <button class="btn btn-secondary" onclick="addIncomeRow('passive')" data-i18n="addPassiveIncome">+ Passive Income</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="type">Type</th>
+            <th data-i18n="source">Source</th>
+            <th data-i18n="currency">Currency</th>
+            <th data-i18n="incomeAmount">Income Amount</th>
+            <th data-i18n="savingsAmount">Savings Amount (Linked)</th>
+            <th data-i18n="savingsRate">Savings Rate</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="incomeTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Visualizations: Allocation & Timeline Chart -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" data-i18n="assetAllocation">Asset Allocation Structure</div>
+        <div class="chart-container">
+          <canvas id="allocationPieChart"></canvas>
         </div>
-      );
-    }
+      </div>
+      <div class="card">
+        <div class="flex-row" style="justify-content: space-between; margin-bottom: 8px;">
+          <div class="card-title" data-i18n="performanceTracking">Portfolio Trend</div>
+          <select id="trendRange" style="width: 140px;" onchange="renderTrendChart()">
+            <option value="1M">1 Month</option>
+            <option value="3M">3 Months</option>
+            <option value="6M">6 Months</option>
+            <option value="1Y">1 Year</option>
+            <option value="2Y">2 Years</option>
+            <option value="3Y">3 Years</option>
+            <option value="5Y">5 Years</option>
+          </select>
+        </div>
+        <div class="chart-container">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
+  <!-- VIEW: KOREA -->
+  <div id="view-korea" class="view-panel">
+    <div class="card">
+      <div class="flex-row" style="justify-content: space-between; margin-bottom: 12px;">
+        <div class="card-title" data-i18n="krAccounts">Korea Bank Accounts (예금 / 적금 / 굴비)</div>
+        <button class="btn" onclick="addKoreaRow()">+ Add Account</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="bank">Bank</th>
+            <th data-i18n="accountType">Account Type</th>
+            <th data-i18n="term">Term</th>
+            <th data-i18n="currentBalance">Current Balance</th>
+            <th data-i18n="monthlyAdd">Monthly Add</th>
+            <th data-i18n="interestRate">Rate (%)</th>
+            <th data-i18n="taxRate">Tax (%)</th>
+            <th data-i18n="expectedMaturity">Net Maturity</th>
+            <th data-i18n="withdrawCount">Withdrawals (Max 2)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="koreaTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VIEW: VIETNAM -->
+  <div id="view-vietnam" class="view-panel">
+    <div class="card">
+      <div class="flex-row" style="justify-content: space-between; margin-bottom: 12px;">
+        <div class="card-title" data-i18n="vnAccounts">Vietnam Fixed & Flexible Deposits</div>
+        <button class="btn" onclick="addVietnamRow()">+ Add Deposit</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="bank">Bank</th>
+            <th data-i18n="depositType">Deposit Type</th>
+            <th data-i18n="term">Term</th>
+            <th data-i18n="currentBalance">Current Balance</th>
+            <th data-i18n="monthlyAdd">Auto Add Date/Month</th>
+            <th data-i18n="interestRate">Rate (%)</th>
+            <th data-i18n="breakRate">Break Rate (%)</th>
+            <th data-i18n="expectedMaturity">Maturity Expected</th>
+            <th data-i18n="earlyClose">Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="vietnamTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VIEW: INVESTMENT FUNDS -->
+  <div id="view-funds" class="view-panel">
+    <div class="card">
+      <div class="flex-row" style="justify-content: space-between; margin-bottom: 12px;">
+        <div class="card-title" data-i18n="fundsList">Investment Funds (CCQ)</div>
+        <div class="flex-row">
+          <button class="btn btn-secondary" onclick="refreshFundNavs()" data-i18n="refreshNav">Update NAVs</button>
+          <button class="btn" onclick="addFundRow()">+ Add Fund</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="code">Fund Code</th>
+            <th data-i18n="units">Units Held</th>
+            <th data-i18n="avgNav">Avg Buy NAV</th>
+            <th data-i18n="latestNav">Latest NAV</th>
+            <th data-i18n="currentVal">Current Valuation</th>
+            <th data-i18n="roi">ROI (%)</th>
+            <th data-i18n="tradeHistory">Trades</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="fundsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VIEW: REAL ESTATE & OTHER ASSETS -->
+  <div id="view-assets" class="view-panel">
+    <div class="card">
+      <div class="flex-row" style="justify-content: space-between; margin-bottom: 12px;">
+        <div class="card-title" data-i18n="assetsLiabilities">Real Estate, Gold & Other Assets</div>
+        <button class="btn" onclick="addAssetRow()">+ Add Asset</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="assetName">Asset Name</th>
+            <th data-i18n="category">Category</th>
+            <th data-i18n="currency">Currency</th>
+            <th data-i18n="assetVal">Market Value</th>
+            <th data-i18n="debtBalance">Associated Debt</th>
+            <th data-i18n="equityVal">Net Equity</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="assetsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+/**
+ * APPLICATION ENGINE
+ */
+
+// PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE:
+const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXp90C-x25UXT83rR0qCAd_twnZ-a4gD0oeCHuQqHsQyOQSRZyy_WXVfAfjvXH6xS_kA/exec";
+
+// State Repository
+let appData = {
+  currency: "VND",
+  lang: "EN",
+  rates: { KRW_VND: 18.5, USD_KRW: 1380.0 },
+  incomes: [
+    { id: 1, type: "active", source: "Korea Salary", currency: "KRW", amount: 2400000, savings: 1150000 },
+    { id: 2, type: "passive", source: "VN Rental Unit", currency: "VND", amount: 7300000, savings: 4000000 }
+  ],
+  koreaAccounts: [
+    { id: 1, bank: "KakaoBank", type: "적금", term: "12M", balance: 9000000, addMonthly: 1000000, rate: 3.0, tax: 15.4, earlyWithdrawals: 0 },
+    { id: 2, bank: "KB", type: "굴비적금", term: "6M", balance: 865000, addMonthly: 150000, rate: 1.4, tax: 15.4, earlyWithdrawals: 0 }
+  ],
+  vietnamAccounts: [
+    { id: 1, bank: "MBBank", type: "Fixed", term: "12M", balance: 7000000, addMonthly: 0, rate: 4.3, breakRate: 0.1, status: "Active" },
+    { id: 2, bank: "MBBank", type: "Deposit Security", term: "12M", balance: 14000000, addMonthly: 0, rate: 6.2, breakRate: 0.1, status: "Active" }
+  ],
+  funds: [
+    { id: 1, code: "MBBOND", units: 100, buyNav: 10000, latestNav: 10175, trades: [{ date: "2026-10-01", type: "BUY", units: 100, amount: 1000000 }] },
+    { id: 2, code: "MBAM", units: 50, buyNav: 10000, latestNav: 10050, trades: [{ date: "2026-10-15", type: "BUY", units: 50, amount: 500000 }] }
+  ],
+  assets: [
+    { id: 1, name: "Vietnam Apartment", category: "Real Estate", currency: "VND", value: 2000000000, debt: 0 },
+    { id: 2, name: "Korea Deposit (Wolse)", category: "Deposit", currency: "KRW", value: 8000000, debt: 0 }
+  ]
+};
+
+// Language Dictionary (English & 한국어 only)
+const i18n = {
+  EN: {
+    resetRates: "Sync Rates", saveCloud: "Sync Cloud", tabOverview: "Overview", tabKorea: "Korea Banking",
+    tabVietnam: "Vietnam Banking", tabFunds: "Investment Funds", tabAssets: "Real Estate & Others",
+    totalNetWorth: "TOTAL NET WORTH", koreaAssets: "KOREA ASSETS", vietnamAssets: "VIETNAM ASSETS",
+    investmentsOther: "FUNDS & REAL ESTATE", monthlyCashFlow: "Monthly Cash Flow & Savings Rate",
+    addActiveIncome: "+ Active Income", addPassiveIncome: "+ Passive Income", type: "Type",
+    source: "Source", currency: "Currency", incomeAmount: "Income", savingsAmount: "Savings (Linked)",
+    savingsRate: "Rate", assetAllocation: "Asset Allocation Structure", performanceTracking: "Portfolio Trend",
+    krAccounts: "Korea Bank Accounts", bank: "Bank", accountType: "Type", term: "Term",
+    currentBalance: "Current Balance", monthlyAdd: "Monthly Add", interestRate: "Rate (%)",
+    taxRate: "Tax (%)", expectedMaturity: "Maturity Expected", withdrawCount: "Withdrawals (Max 2)",
+    vnAccounts: "Vietnam Deposits", depositType: "Type", breakRate: "Break Rate (%)", earlyClose: "Status",
+    fundsList: "Investment Funds (CCQ)", refreshNav: "Update NAVs", code: "Fund Code", units: "Units",
+    avgNav: "Buy NAV", latestNav: "Latest NAV", currentVal: "Valuation", roi: "ROI (%)", tradeHistory: "Trades",
+    assetsLiabilities: "Real Estate, Gold & Other Assets", assetName: "Asset Name", category: "Category",
+    assetVal: "Market Value", debtBalance: "Debt", equityVal: "Net Equity"
+  },
+  KR: {
+    resetRates: "환율 갱신", saveCloud: "클라우드 동기화", tabOverview: "총괄", tabKorea: "한국 금융",
+    tabVietnam: "베트남 금융", tabFunds: "펀드 투자", tabAssets: "부동산 및 기타 자산",
+    totalNetWorth: "순자산 총액", koreaAssets: "한국 자산", vietnamAssets: "베트남 자산",
+    investmentsOther: "펀드 및 부동산", monthlyCashFlow: "월 현금 흐름 및 저축률",
+    addActiveIncome: "+ 근로소득", addPassiveIncome: "+ 수동소득", type: "유형",
+    source: "출처", currency: "통화", incomeAmount: "소득액", savingsAmount: "저축액",
+    savingsRate: "저축률", assetAllocation: "자산 배분 구조", performanceTracking: "자산 변동 추이",
+    krAccounts: "한국 금융 계좌", bank: "은행", accountType: "계좌 유형", term: "기간",
+    currentBalance: "현재 잔액", monthlyAdd: "월 추가 납입", interestRate: "금리 (%)",
+    taxRate: "세율 (%)", expectedMaturity: "만기 예상액", withdrawCount: "중도인출",
+    vnAccounts: "베트남 예적금", depositType: "유형", breakRate: "중도해지 금리 (%)", earlyClose: "상태",
+    fundsList: "펀드 투자 내역", refreshNav: "기준가 갱신", code: "종목 코드", units: "보유 수량",
+    avgNav: "매입 기준가", latestNav: "최근 기준가", currentVal: "평가액", roi: "수익률 (%)", tradeHistory: "거래 내역",
+    assetsLiabilities: "부동산 및 기타 자산", assetName: "자산명", category: "분류",
+    assetVal: "평가액", debtBalance: "부채", equityVal: "순자산"
+  }
+};
+
+let pieChart = null;
+let trendChart = null;
+
+// Initialization
+document.addEventListener("DOMContentLoaded", () => {
+  fetchExchangeRates();
+  renderApp();
+});
+
+function changeLanguage() {
+  appData.lang = document.getElementById("langSelect").value;
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (i18n[appData.lang][key]) el.innerText = i18n[appData.lang][key];
+  });
+  renderApp();
+}
+
+function switchTab(tabKey) {
+  document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+  document.querySelectorAll(".view-panel").forEach(panel => panel.classList.remove("active"));
+  
+  event.target.classList.add("active");
+  document.getElementById(`view-${tabKey}`).classList.add("active");
+  if (tabKey === "overview") {
+    renderCharts();
+  }
+}
+
+// Exchange Rates Fetcher
+async function fetchExchangeRates() {
+  try {
+    const res = await fetch("https://open.er-api.com/v6/latest/USD");
+    const data = await res.json();
+    if (data && data.rates) {
+      const usdKrw = data.rates.KRW;
+      const usdVnd = data.rates.VND;
+      appData.rates.USD_KRW = usdKrw;
+      appData.rates.KRW_VND = usdVnd / usdKrw;
+      document.getElementById("krwVndDisplay").innerText = `1 KRW = ${appData.rates.KRW_VND.toFixed(2)} VND`;
+      document.getElementById("usdKrwDisplay").innerText = `1 USD = ${usdKrw.toFixed(0)} KRW`;
+    }
+  } catch (e) {
+    document.getElementById("krwVndDisplay").innerText = `1 KRW = 18.50 VND`;
+    document.getElementById("usdKrwDisplay").innerText = `1 USD = 1380 KRW`;
+  }
+  renderApp();
+}
+
+// Conversion Utility
+function convertToDisplay(amount, fromCurrency) {
+  const target = document.getElementById("displayCurrency").value;
+  let valInVND = 0;
+  if (fromCurrency === "VND") valInVND = amount;
+  else if (fromCurrency === "KRW") valInVND = amount * appData.rates.KRW_VND;
+  else if (fromCurrency === "USD") valInVND = amount * (appData.rates.USD_KRW * appData.rates.KRW_VND);
+
+  if (target === "VND") return valInVND;
+  if (target === "KRW") return valInVND / appData.rates.KRW_VND;
+  if (target === "USD") return valInVND / (appData.rates.USD_KRW * appData.rates.KRW_VND);
+  return amount;
+}
+
+function formatNumber(num) {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(num);
+}
+
+// App Core Calculation & Rendering
+function renderApp() {
+  const targetCurrency = document.getElementById("displayCurrency").value;
+  
+  // Korea Total
+  let koreaTotalRaw = appData.koreaAccounts.reduce((acc, cur) => acc + cur.balance, 0);
+  let koreaTotalConverted = convertToDisplay(koreaTotalRaw, "KRW");
+  document.getElementById("koreaTotalDisplay").innerText = `${formatNumber(koreaTotalConverted)} ${targetCurrency}`;
+
+  // Vietnam Total
+  let vietnamTotalRaw = appData.vietnamAccounts.reduce((acc, cur) => acc + (cur.status === "Active" ? cur.balance : 0), 0);
+  let vietnamTotalConverted = convertToDisplay(vietnamTotalRaw, "VND");
+  document.getElementById("vietnamTotalDisplay").innerText = `${formatNumber(vietnamTotalConverted)} ${targetCurrency}`;
+
+  // Funds Total
+  let fundsTotalRaw = appData.funds.reduce((acc, cur) => acc + (cur.units * cur.latestNav), 0);
+  let fundsTotalConverted = convertToDisplay(fundsTotalRaw, "VND");
+
+  // Real Estate & Assets Net
+  let assetsTotalRaw = appData.assets.reduce((acc, cur) => {
+    let equity = cur.value - cur.debt;
+    return acc + convertToDisplay(equity, cur.currency);
+  }, 0);
+  
+  document.getElementById("fundsEstateDisplay").innerText = `${formatNumber(fundsTotalConverted + assetsTotalRaw)} ${targetCurrency}`;
+
+  // Total Net Worth
+  let totalNetWorth = koreaTotalConverted + vietnamTotalConverted + fundsTotalConverted + assetsTotalRaw;
+  document.getElementById("netWorthDisplay").innerText = `${formatNumber(totalNetWorth)} ${targetCurrency}`;
+
+  renderTables();
+  renderCharts();
+}
+
+function renderTables() {
+  // Incomes Table
+  const incBody = document.getElementById("incomeTableBody");
+  incBody.innerHTML = "";
+  appData.incomes.forEach((inc, idx) => {
+    const rate = inc.amount > 0 ? ((inc.savings / inc.amount) * 100).toFixed(1) : 0;
+    incBody.innerHTML += `
+      <tr>
+        <td>${inc.type.toUpperCase()}</td>
+        <td><input type="text" value="${inc.source}" onchange="appData.incomes[${idx}].source=this.value"></td>
+        <td>
+          <select onchange="appData.incomes[${idx}].currency=this.value; renderApp();">
+            <option value="KRW" ${inc.currency==='KRW'?'selected':''}>KRW</option>
+            <option value="VND" ${inc.currency==='VND'?'selected':''}>VND</option>
+            <option value="USD" ${inc.currency==='USD'?'selected':''}>USD</option>
+          </select>
+        </td>
+        <td><input type="number" value="${inc.amount}" onchange="appData.incomes[${idx}].amount=parseFloat(this.value)||0; renderApp();"></td>
+        <td><input type="number" value="${inc.savings}" onchange="appData.incomes[${idx}].savings=parseFloat(this.value)||0; renderApp();"></td>
+        <td>${rate}%</td>
+        <td><button class="btn btn-danger" onclick="appData.incomes.splice(${idx},1); renderApp();">X</button></td>
+      </tr>
+    `;
+  });
+
+  // Korea Table
+  const krBody = document.getElementById("koreaTableBody");
+  krBody.innerHTML = "";
+  appData.koreaAccounts.forEach((acc, idx) => {
+    const netRate = acc.rate * (1 - acc.tax / 100);
+    const expected = acc.balance * (1 + (netRate / 100));
+    krBody.innerHTML += `
+      <tr>
+        <td><input type="text" value="${acc.bank}" onchange="appData.koreaAccounts[${idx}].bank=this.value"></td>
+        <td>
+          <select onchange="appData.koreaAccounts[${idx}].type=this.value">
+            <option value="예금" ${acc.type==='예금'?'selected':''}>예금</option>
+            <option value="적금" ${acc.type==='적금'?'selected':''}>적금</option>
+            <option value="굴비적금" ${acc.type==='굴비적금'?'selected':''}>굴비적금</option>
+          </select>
+        </td>
+        <td>
+          <select onchange="appData.koreaAccounts[${idx}].term=this.value">
+            <option value="6M" ${acc.term==='6M'?'selected':''}>6M</option>
+            <option value="12M" ${acc.term==='12M'?'selected':''}>12M</option>
+          </select>
+        </td>
+        <td><input type="number" value="${acc.balance}" onchange="appData.koreaAccounts[${idx}].balance=parseFloat(this.value)||0; renderApp();"></td>
+        <td><input type="number" value="${acc.addMonthly}" onchange="appData.koreaAccounts[${idx}].addMonthly=parseFloat(this.value)||0;"></td>
+        <td><input type="number" step="0.1" value="${acc.rate}" onchange="appData.koreaAccounts[${idx}].rate=parseFloat(this.value)||0; renderApp();"></td>
+        <td><input type="number" step="0.1" value="${acc.tax}" onchange="appData.koreaAccounts[${idx}].tax=parseFloat(this.value)||0; renderApp();"></td>
+        <td>${formatNumber(expected)}</td>
+        <td>
+          <select onchange="appData.koreaAccounts[${idx}].earlyWithdrawals=parseInt(this.value);">
+            <option value="0" ${acc.earlyWithdrawals===0?'selected':''}>0</option>
+            <option value="1" ${acc.earlyWithdrawals===1?'selected':''}>1</option>
+            <option value="2" ${acc.earlyWithdrawals===2?'selected':''}>2</option>
+          </select>
+        </td>
+        <td><button class="btn btn-danger" onclick="appData.koreaAccounts.splice(${idx},1); renderApp();">X</button></td>
+      </tr>
+    `;
+  });
+
+  // Vietnam Table
+  const vnBody = document.getElementById("vietnamTableBody");
+  vnBody.innerHTML = "";
+  appData.vietnamAccounts.forEach((acc, idx) => {
+    const expected = acc.status === "Active" ? acc.balance * (1 + acc.rate/100) : acc.balance * (1 + acc.breakRate/100);
+    vnBody.innerHTML += `
+      <tr>
+        <td><input type="text" value="${acc.bank}" onchange="appData.vietnamAccounts[${idx}].bank=this.value"></td>
+        <td>
+          <select onchange="appData.vietnamAccounts[${idx}].type=this.value">
+            <option value="Fixed" ${acc.type==='Fixed'?'selected':''}>Fixed Deposit</option>
+            <option value="Flexible" ${acc.type==='Flexible'?'selected':''}>Flexible Deposit</option>
+            <option value="Deposit Security" ${acc.type==='Deposit Security'?'selected':''}>Security Deposit</option>
+          </select>
+        </td>
+        <td>
+          <select onchange="appData.vietnamAccounts[${idx}].term=this.value">
+            <option value="1M">1M</option><option value="3M">3M</option><option value="6M">6M</option>
+            <option value="12M" selected>12M</option><option value="24M">24M</option><option value="36M">36M</option>
+          </select>
+        </td>
+        <td><input type="number" value="${acc.balance}" onchange="appData.vietnamAccounts[${idx}].balance=parseFloat(this.value)||0; renderApp();"></td>
+        <td><input type="number" value="${acc.addMonthly}" onchange="appData.vietnamAccounts[${idx}].addMonthly=parseFloat(this.value)||0;"></td>
+        <td><input type="number" step="0.1" value="${acc.rate}" onchange="appData.vietnamAccounts[${idx}].rate=parseFloat(this.value)||0; renderApp();"></td>
+        <td><input type="number" step="0.1" value="${acc.breakRate}" onchange="appData.vietnamAccounts[${idx}].breakRate=parseFloat(this.value)||0;"></td>
+        <td>${formatNumber(expected)}</td>
+        <td>
+          <select onchange="appData.vietnamAccounts[${idx}].status=this.value; renderApp();">
+            <option value="Active" ${acc.status==='Active'?'selected':''}>Active</option>
+            <option value="Cancelled" ${acc.status==='Cancelled'?'selected':''}>Early Break</option>
+          </select>
+        </td>
+        <td><button class="btn btn-danger" onclick="appData.vietnamAccounts.splice(${idx},1); renderApp();">X</button></td>
+      </tr>
+    `;
+  });
+
+  // Funds Table
+  const fundBody = document.getElementById("fundsTableBody");
+  fundBody.innerHTML = "";
+  appData.funds.forEach((f, idx) => {
+    const valuation = f.units * f.latestNav;
+    const roi = f.buyNav > 0 ? (((f.latestNav - f.buyNav) / f.buyNav) * 100).toFixed(2) : 0;
+    fundBody.innerHTML += `
+      <tr>
+        <td><input type="text" value="${f.code}" onchange="appData.funds[${idx}].code=this.value"></td>
+        <td><input type="number" value="${f.units}" onchange="appData.funds[${idx}].units=parseFloat(this.value)||0; renderApp();"></td>
+        <td><input type="number" value="${f.buyNav}" onchange="appData.funds[${idx}].buyNav=parseFloat(this.value)||0; renderApp();"></td>
+        <td><input type="number" value="${f.latestNav}" onchange="appData.funds[${idx}].latestNav=parseFloat(this.value)||0; renderApp();"></td>
+        <td>${formatNumber(valuation)}</td>
+        <td style="color:${roi>=0?'var(--success)':'var(--danger)'}">${roi}%</td>
+        <td><button class="btn btn-secondary" onclick="logTrade(${idx})">Trade</button></td>
+        <td><button class="btn btn-danger" onclick="appData.funds.splice(${idx},1); renderApp();">X</button></td>
+      </tr>
+    `;
+  });
+
+  // Assets Table
+  const assetBody = document.getElementById("assetsTableBody");
+  assetBody.innerHTML = "";
+  appData.assets.forEach((a, idx) => {
+    const equity = a.value - a.debt;
+    assetBody.innerHTML += `
+      <tr>
+        <td><input type="text" value="${a.name}" onchange="appData.assets[${idx}].name=this.value"></td>
+        <td>
+          <select onchange="appData.assets[${idx}].category=this.value">
+            <option value="Real Estate" ${a.category==='Real Estate'?'selected':''}>Real Estate</option>
+            <option value="Gold" ${a.category==='Gold'?'selected':''}>Gold</option>
+            <option value="Deposit" ${a.category==='Deposit'?'selected':''}>Deposit</option>
+            <option value="Other" ${a.category==='Other'?'selected':''}>Other</option>
+          </select>
+        </td>
+        <td>
+          <select onchange="appData.assets[${idx}].currency=this.value; renderApp();">
+            <option value="VND" ${a.currency==='VND'?'selected':''}>VND</option>
+            <option value="KRW" ${a.currency==='KRW'?'selected':''}>KRW</option>
+            <option value="USD" ${a.currency==='USD'?'selected':''}>USD</option>
+          </select>
+        </td>
+        <td><input type="number" value="${a.value}" onchange="appData.assets[${idx}].value=parseFloat(this.value)||0; renderApp();"></td>
+        <td><input type="number" value="${a.debt}" onchange="appData.assets[${idx}].debt=parseFloat(this.value)||0; renderApp();"></td>
+        <td>${formatNumber(equity)}</td>
+        <td><button class="btn btn-danger" onclick="appData.assets.splice(${idx},1); renderApp();">X</button></td>
+      </tr>
+    `;
+  });
+}
+
+// Chart Renderers
+function renderCharts() {
+  const targetCurrency = document.getElementById("displayCurrency").value;
+
+  // Breakdown values
+  const krw = convertToDisplay(appData.koreaAccounts.reduce((acc, c) => acc + c.balance, 0), "KRW");
+  const vnd = convertToDisplay(appData.vietnamAccounts.reduce((acc, c) => acc + (c.status === "Active" ? c.balance : 0), 0), "VND");
+  const funds = convertToDisplay(appData.funds.reduce((acc, c) => acc + (c.units * c.latestNav), 0), "VND");
+  const assets = appData.assets.reduce((acc, c) => acc + convertToDisplay(c.value - c.debt, c.currency), 0);
+
+  // Allocation Donut Chart
+  if (pieChart) pieChart.destroy();
+  const ctxPie = document.getElementById("allocationPieChart").getContext("2d");
+  pieChart = new Chart(ctxPie, {
+    type: "doughnut",
+    data: {
+      labels: ["Korea", "Vietnam", "Funds", "Real Estate"],
+      datasets: [{
+        data: [krw, vnd, funds, assets],
+        backgroundColor: ["#38bdf8", "#34d399", "#fbbf24", "#f87171"],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "right", labels: { color: "#f8fafc" } } }
+    }
+  });
+
+  renderTrendChart();
+}
+
+function renderTrendChart() {
+  if (trendChart) trendChart.destroy();
+  const ctxTrend = document.getElementById("trendChart").getContext("2d");
+  
+  // Synthetic trend line based on current values
+  const labels = ["M-5", "M-4", "M-3", "M-2", "M-1", "Current"];
+  const total = convertToDisplay(appData.koreaAccounts.reduce((a,c)=>a+c.balance,0), "KRW") +
+                convertToDisplay(appData.vietnamAccounts.reduce((a,c)=>a+c.balance,0), "VND") +
+                convertToDisplay(appData.funds.reduce((a,c)=>a+c.units*c.latestNav,0), "VND");
+
+  trendChart = new Chart(ctxTrend, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Total Net Worth",
+        data: [total * 0.92, total * 0.94, total * 0.95, total * 0.97, total * 0.99, total],
+        borderColor: "#38bdf8",
+        backgroundColor: "rgba(56, 189, 248, 0.1)",
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: "#94a3b8" }, grid: { color: "#334155" } },
+        y: { ticks: { color: "#94a3b8" }, grid: { color: "#334155" } }
+      }
+    }
+  });
+}
+
+// Append Row Helpers
+function addIncomeRow(type) {
+  appData.incomes.push({ id: Date.now(), type, source: "New Source", currency: "VND", amount: 0, savings: 0 });
+  renderApp();
+}
+
+function addKoreaRow() {
+  appData.koreaAccounts.push({ id: Date.now(), bank: "New Bank", type: "예금", term: "12M", balance: 0, addMonthly: 0, rate: 3.0, tax: 15.4, earlyWithdrawals: 0 });
+  renderApp();
+}
+
+function addVietnamRow() {
+  appData.vietnamAccounts.push({ id: Date.now(), bank: "New Bank", type: "Fixed", term: "12M", balance: 0, addMonthly: 0, rate: 5.0, breakRate: 0.1, status: "Active" });
+  renderApp();
+}
+
+function addFundRow() {
+  appData.funds.push({ id: Date.now(), code: "NEWFUND", units: 0, buyNav: 10000, latestNav: 10000, trades: [] });
+  renderApp();
+}
+
+function addAssetRow() {
+  appData.assets.push({ id: Date.now(), name: "Asset Item", category: "Other", currency: "VND", value: 0, debt: 0 });
+  renderApp();
+}
+
+function logTrade(fundIdx) {
+  const units = prompt("Enter Units (Positive for BUY, Negative for SELL):");
+  if (!units) return;
+  const numUnits = parseFloat(units);
+  appData.funds[fundIdx].units += numUnits;
+  renderApp();
+}
+
+function refreshFundNavs() {
+  // Simulates previous day close NAV refresh
+  appData.funds.forEach(f => {
+    f.latestNav = Math.round(f.latestNav * (1 + (Math.random() * 0.02 - 0.01)));
+  });
+  renderApp();
+}
+
+// Google Sheets Sync
+async function syncWithGoogleSheet() {
+  if (!GOOGLE_APP_SCRIPT_URL) {
+    alert("Please set your Google Apps Script URL in the code!");
+    return;
+  }
+  try {
+    const payload = {
+      year: new Date().getFullYear(),
+      data: appData
+    };
+    await fetch(GOOGLE_APP_SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    alert("Data synchronized with Google Sheet.");
+  } catch (err) {
+    alert("Sync error: " + err.toString());
+  }
+}
+</script>
 </body>
 </html>
